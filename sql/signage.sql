@@ -35,7 +35,9 @@ do $$
 			raise notice 'Creating feed types';
 			create table feed_types (
 				id		bigint not null,
-				name		text	
+				name		text,
+				php_script	text,
+				php_class	text	
 			);
 			create sequence seq_feed_types;
 			alter table feed_types alter column id set default nextval('seq_feed_types');
@@ -45,8 +47,9 @@ do $$
 
 			grant select on feed_types to signage;
 
-			insert into feed_types (name) values 
-				('rss'), ('apod');
+			insert into feed_types (name, php_script, php_class) values 
+				('rss',  '/lib/feeds/rss.php',  'FeedRSS'), 
+				('apod', '/lib/feeds/apod.php', 'FeedAPOD');
 
 			-- feeds
 			-- cached : defines if the feed contents is to be saved 
@@ -71,12 +74,16 @@ do $$
 			grant select on feeds to signage;
 
 			create table feed_contents (
+			        id		bigint not null,
 				id_feed		bigint not null,
 				date		timestamp,
 				title		text,	
 				image		text,
 				detail		text
 			);		
+			create sequence seq_feed_contents;
+			alter table feed_contents alter column id set default nextval('seq_feed_contents');
+			create unique index pk_feed_contents__id on feed_contents(id);
 			create unique index pk_feed_contents on feed_contents(id_feed, date);
 			alter table feed_contents add primary key using index pk_feed_contents;
 			create index fk_feed_contents__id_feed on feed_contents(id_feed);

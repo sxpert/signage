@@ -1,4 +1,4 @@
 all: tests
 
 tests:
-	@php apod.php
+	@php feeds/apod.php

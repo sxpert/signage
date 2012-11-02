@@ -1,6 +1,6 @@
 <?php
 
-require_once ('../config.php');
+require_once (dirname(dirname(__file__)).'/config.php');
 
 $db = null;
 

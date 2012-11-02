@@ -11,30 +11,6 @@ function XHR (url, callback) {
     xhr.send();
 }
 
-function resizeBody (res) {
-    sw = document.width;
-    sh = document.height;
-    dw = sw / res['w'];
-    dh = sh / res['h'];
-    scale = Math.min(dw, dh);
-    w = Math.floor(res['w']*scale);
-    h = Math.floor(res['h']*scale);
-    // modifie le style & co
-    var ebs = document.body.style;
-    ebs.fontSize = 100*scale;
-    if (w < sw) {
-	ebs.marginTop = 0;
-	ebs.marginBottom = 0;
-	ebs.marginLeft = (sw - w)/2;
-	ebs.marginRight = (sw - w)/2;
-    } else {
-	ebs.marginTop = (sh - h) / 2;
-	ebs.marginBottom = (sh - h) / 2;
-	ebs.marginLeft = 0;
-	ebs.marginRight = 0;
-    }   
-}
-
 function fetchInformations () {
     XHR ('screen.php', function (mimetype, contents) {
 	if (mimetype == 'application/json') {
@@ -58,14 +34,12 @@ function initApplication() {
 	if (mimetype == 'application/json') {
 	    var screen = JSON.parse(contents);
 	    var res = screen['resolution'];
-	    window.onresize = function () {
-		resizeBody (res);
-	    }
-	    resizeBody(res);
 	    document.body.parentElement.style.backgroundColor = 'black';
 	    if (screen['backgroundColor']!==undefined)
 		document.body.style.backgroundColor = screen['backgroundColor'];
 	    document.body.style.fontFamily = 'Sans';
+	    document.body.style.margin = 0;
+	    document.body.style.fontSize= '100px';
 	    var contents = document.createElement('div');
 	    contents.style.position = 'relative';
 	    contents.style.width = '100%';
@@ -81,20 +55,12 @@ function initApplication() {
 		if (zone['color']!==undefined)
 		    div.style.color=zone['color'];
 		div.style.position= 'absolute';
-		/*
-		if (zone['borderWidth']!==undefined) {
-		    border = zone['borderWidth'];
-		    div.style.borderWidth = border+'px';
-		    div.style.borderStyle = 'solid';
-		    if (zone['borderColor']!==undefined)
-			div.style.borderColor = zone['borderColor'];
-		} else */
-		    border = 0;
+		border = 0;
 		
-		div.style.left = (zone['x']/res['w'])*100+'%';
-		div.style.top = (zone['y']/res['h'])*100+'%';
-		div.style.width = ((zone['w']-border*2)/res['w'])*100+'%';
-		div.style.height = ((zone['h']-border*2)/res['h'])*100+'%';
+		div.style.left = zone['x']+'px';
+		div.style.top = zone['y']+'px';
+		div.style.width = zone['w']-border*2+'px';
+		div.style.height = zone['h']-border*2+'px';
 		div.style.overflow = 'hidden';
 		if (zone['fontSize']!==undefined) 
 		    div.style.fontSize = zone['fontSize'];
