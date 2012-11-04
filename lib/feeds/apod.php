@@ -293,19 +293,22 @@ class FeedAPOD {
 	    $y = '19'.$y;
 	  else
 	    $y = '20'.$y;
+	  $date = $y.'-'.$m.'-'.$d;
 	  $apodcache = $install."/cache/images/apod/".$y.'/'.$m.'/';
-	  echo $apodcache."\n";
 	  make_webserver_dir ($apodcache);
 
 	  if (($u['scheme']=='http')&&($u['host']=='apod.nasa.gov')) {
-	    print_r($u);
-	    $fname = $apodcache.basename($img);
-	    echo $fname;
-	    cache_url_to_file ($url, $fname);
-	    exit(0);
+	    $fname = $apodcache.$d.'--'.basename($img);
+	    if (cache_url_to_file ($img, $fname))
+	      $img = $fname;
+	    else
+	      $img=null;
 	  }
 	  // push this new item in the database
-	  sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
+	  if ($img!=null)
+	    sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
+	  else
+	    echo "Unable to grab picture, skipping";
 	}
 	
       } else
@@ -371,17 +374,17 @@ class FeedAPOD {
     echo "finding if we have stuff in contents\n";
     $res = db_query('select * from feed_contents where id_feed=$1 and date = (select max(date) from feed_contents where id_feed=$1);',
 		    array($this->feedinfo['id']));
-    //if (db_num_rows($res) == 1) {
-    if (false) {
+    //if (false) {
+    if (db_num_rows($res) == 1) {
       echo "found one... fetching the next ones\n";
       $row = db_fetch_assoc($res);
 			
       $today = new DateTime('now');
-      $cd = new DateTime($row['date']);
       $oneday = new DateInterval('P1D');
+      $cd = (new DateTime($row['date']))->add($oneday);
       while ($cd < $today) {
-	$this->getApodByDate($cd);
 	$cd->add($oneday);
+	$this->getApodByDate($cd);
       }
 			
     } else {

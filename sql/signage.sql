@@ -82,6 +82,7 @@ do $$
 				detail		text
 			);		
 			create sequence seq_feed_contents;
+			grant usage on seq_feed_contents to signage;
 			alter table feed_contents alter column id set default nextval('seq_feed_contents');
 			create unique index pk_feed_contents__id on feed_contents(id);
 			create unique index pk_feed_contents on feed_contents(id_feed, date);

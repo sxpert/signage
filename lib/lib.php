@@ -23,9 +23,17 @@ function mkdir_webserver_recurse ($base, $path) {
     mkdir_webserver_recurse($base, dirname($path));
   } 
   $path = $base.$path;
-  mkdir ($path, 0777);
-  chmod ($path, 0775);
-  chgrp ($path, 'www-data');
+  if (!file_exists($path)) {
+    mkdir ($path, 0777);
+    chmod ($path, 0775);
+    chgrp ($path, 'www-data');
+  } else {
+    // check rights
+    if (!is_writable($path)) {
+      $posixuser = posix_getpwuid (posix_geteuid());
+      echo "WARNING : ".$path." is not writable by current user ".$posixuser['name']."\n";
+    }
+  }
 }
 
 function make_webserver_dir ($path) {
@@ -37,13 +45,18 @@ function make_webserver_dir ($path) {
 function cache_url_to_file ($url, $file) {
   echo "saving url ".$url." to file ".$file."\n";
   $src = fopen ($url, 'rb');
-  $dest = fopen ($file, 'wb');
-  while (!feof($src))
-    fwrite ($dest, fread ($src, 4096));
-  fclose($src);
-  fclose($dest);
-  chmod ($file, 0775);
-  chgrp ($file, 'www-data');
+  if ($src) {
+    $dest = fopen ($file, 'wb');
+    while (!feof($src))
+      fwrite ($dest, fread ($src, 4096));
+    fclose($src);
+    fclose($dest);
+    chmod ($file, 0664);
+    chgrp ($file, 'www-data');
+    return true;
+  }
+  echo "Unable to open source ".$url."\n";
+  return false;
 }
 
 ?> 

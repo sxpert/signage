@@ -37,14 +37,11 @@ function initApplication() {
 	    document.body.parentElement.style.backgroundColor = 'black';
 	    if (screen['backgroundColor']!==undefined)
 		document.body.style.backgroundColor = screen['backgroundColor'];
-	    document.body.style.fontFamily = 'Sans';
+	    document.body.style.fontFamily = 'Sans,sans-serif';
 	    document.body.style.margin = 0;
 	    document.body.style.fontSize= '100px';
-	    var contents = document.createElement('div');
-	    contents.style.position = 'relative';
-	    contents.style.width = '100%';
-	    contents.style.height = '100%';
-	    document.body.appendChild(contents);
+	    document.body.style.width=res['w']+'px';
+            document.body.style.height=res['h']+'px';
 	    var z = screen['zones'];
 	    for(var i=0;i<z.length;i++) {
 		var zone = z[i];
@@ -67,7 +64,7 @@ function initApplication() {
 		else
 		    div.style.fontSize = '100%';
 		console.log (div);
-		contents.appendChild(div);
+		document.body.appendChild(div);
 	    }
 	    fetchInformations();
 	} else 
