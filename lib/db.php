@@ -30,6 +30,10 @@ function db_num_rows ($r) {
 	return pg_num_rows($r);
 }
 
+function db_affected_rows ($r) {
+  return pg_affected_rows($r);
+}
+  
 function db_fetch_assoc ($r) {
 	return pg_fetch_assoc($r);
 }

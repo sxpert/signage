@@ -1,0 +1,18 @@
+@font-face {
+    font-family: 'Ubuntu';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Ubuntu'), url('/lib/fonts/Ubuntu-Regular.ttf'), url('/lib/fonts/Ubuntu-Regular.woff');
+}
+@font-face {
+    font-family: 'Ubuntu';
+    font-style: normal;
+    font-weight: bold;
+    src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url('/lib/fonts/Ubuntu-Bold.ttf'), url('/lib/fonts/Ubuntu-Bold.woff');
+}
+@font-face {
+    font-family: 'OpenSymbol';
+    font-style: normal;
+    font-weight: normal;
+    src: local('OpenSymbol'), url('/lib/fonts/opensymbol.ttf');
+}

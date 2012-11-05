@@ -1,0 +1,8 @@
+.notadopted {
+  background-color: PapayaWhip !important;
+}
+.adopt {
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background-color: PaleGreen;
+}
