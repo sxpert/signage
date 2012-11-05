@@ -402,10 +402,13 @@ if (getenv('TERM')) {
   $f = new $class();
   $f->update();
 } else {
-  echo "<pre>web server\n";
-  $f = new FeedAPOD ();
-  $f->update();
-  echo "</pre>";
+  echo "<html>\n";
+  echo "  <head>\n";
+  echo "    <title>Signage - Apod plugin</title>\n";
+  echo "  </head>\n";
+  echo "  <body>\n";
+  echo "    <p>Sorry, you can't call the apod plugin directly from the web</p>\n";
+  echo "  </body>\n";
+  echo "</html>\n";
 }
-
 ?>

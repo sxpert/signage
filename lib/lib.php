@@ -59,4 +59,8 @@ function cache_url_to_file ($url, $file) {
   return false;
 }
 
+function get_remote_ip () {
+  return $_SERVER['REMOTE_ADDR'];
+}
+
 ?> 
