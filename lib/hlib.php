@@ -23,6 +23,12 @@ function hlib_get_variable ($array, $varname) {
   }
 }
 
+function hlib_get_checkbox ($array, $varname) {
+  $v = strtolower(trim(hlib_get_variable ($array, $varname)));
+  if (strcmp($v, 'on')==0) return true;
+  return false;
+}
+
 /*
  * retourne le chemin d'ou on vient si le host == le host de la machine sur 
  * laquelle on tourne. False sinon
@@ -96,6 +102,15 @@ function hlib_fail ($code, $message) {
   echo $message;
   hlib_footer();
   exit (1);
+}
+
+function hlib_fatal($message) {
+  hlib_top();
+  hlib_menu();
+  echo "<h1>Erreur fatale</h1>\n";
+  echo "<p>".$message."</p>";
+  hlib_footer();
+  exit(0);
 }
 
 /******************************************************************************
@@ -299,6 +314,7 @@ function hlib_menu_form_end (&$menu) {
 function hlib_menu($menu=null) {
   echo "<div id=\"main\">\n";
   echo "<div id=\"menu\">\n";
+  if ($menu==null) $menu=array();
   foreach ($menu as $menuitem) {
     switch ($menuitem['type']) {
     case HLIB_MENU_SECTION: echo "<div>".$menuitem['item']."</div>\n"; break;
@@ -824,7 +840,15 @@ function hlib_form_checkbox ($form, $label, $variable, $value="", $group=null) {
   echo "<div>";
   echo "<label for=\"".$variable."\">".$label."</label>";
   echo "<input type=\"checkbox\" name=\"".$variable."\"";
-  if ((is_bool($value)&&$value)||(!strcmp($value,'on'))) echo " checked";
+  /*
+   * si on a un type booléen et qu'il est a true
+   * si on a la chaine 'on' (comme dans un formulaire)
+   * si on a la chaine 't' (comme en sql)
+   */
+  if ((is_bool($value)&&$value)||
+      (!strcmp($value,'on'))||
+      (!strcmp($value,'t'))) 
+    echo " checked";
   echo "/></div>\n";
 }
 

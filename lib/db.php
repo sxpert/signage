@@ -38,4 +38,26 @@ function db_fetch_assoc ($r) {
 	return pg_fetch_assoc($r);
 }
 
+function db_update ($table, $key, $fields) {
+  $f = array ();
+  $v = array ();
+  $i = 1;
+  foreach($fields as $k => $val) {
+    array_push ($f, $k.'=$'.$i);
+    if (is_bool($val))
+      $val = $val?'t':'f';
+    array_push ($v, $val);
+    $i++;
+  }
+  error_log(print_r($f,1));
+  error_log(print_r($v,1));
+  $f = join(',',$f);
+  $s = 'update '.$table.' set '.$f.' where '.$key[0].'=$'.$i.';';
+  error_log($s);
+  array_push($v,$key[1]);
+  $res = db_query($s,$v);
+  if (db_affected_rows($res)==1) return true;
+  else return false;
+}
+
 ?>

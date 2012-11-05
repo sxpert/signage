@@ -136,6 +136,11 @@
     #content > div.error {
 	    margin-bottom: 3px;
     }
+    #content > h1,
+    #content > h2,
+    #content > h3 {
+      margin-top: 0;
+    }
     #content > div.error,
     #content > form > div.error {
 	    color: red;

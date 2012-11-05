@@ -7,7 +7,7 @@ require_once($d.'/lib/signlib.php');
 
 hlib_style_add('css/screens.css');
 hlib_top();
-hlib_menu();
+hlib_menu(sign_admin_menu());
 
 // lister les écrans
 db_connect();
