@@ -64,10 +64,10 @@ do $$
       --
       raise notice 'Creating feed types';
       create table feed_types (
-        id		      bigint not null,
-        name		    text,
-        php_script	text,
-        php_class	  text	
+        id	   bigint not null,
+        name	   text,
+        php_script text,
+        php_class  text	
       );
 
       create sequence seq_feed_types;
@@ -90,9 +90,9 @@ do $$
       -- cached : defines if the feed contents is to be saved 
       raise notice 'Creating feeds';
       create table feeds (
-	id		  bigint not null,
+	id	bigint not null,
 	id_type	bigint not null,
-	url		  text
+	url	text
       );
 
       create sequence seq_feeds;
@@ -114,12 +114,12 @@ do $$
       -- contents of feeds (cached data)
       --
       create table feed_contents (
-        id		  bigint not null,
-	id_feed	bigint not null,
+        id   	   	bigint not null,
+	id_feed	bigint 	not null,
 	date		timestamp,
 	title		text,	
 	image		text,
-	detail	text
+	detail		text
       );		
 
       create sequence seq_feed_contents;
@@ -193,13 +193,35 @@ do $$
 $$;
 
 do $$
+  declare
+    apod_id	bigint;
   begin
     if update_version(5,2) then
+
+      --
       -- ajoute un nom aux feeds
+      --
       alter table feeds add column name text;
       
+      --
+      -- ajoute un booléen pour définir les feeds système (non supprimables)
       -- 
+      alter table feeds add column system boolean default false;
+
+      --
+      -- modifie le flux apod, ajoute nom et état système
+      -- 
+      select id into apod_id from feed_types where name='apod';
+      update feeds set name='Astronomy Picture Of the Day', system=true where id_type=apod_id;
       
+      --
+      -- ajoute un type de flux manuel
+      --
+      insert into feed_types (name, php_script, php_class) values
+        ('manuel', '/lib/feeds/manual.php', 'FeedManual');
+      
+      
+
     end if; 
   end;
 $$;

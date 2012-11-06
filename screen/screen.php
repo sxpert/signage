@@ -25,7 +25,9 @@ if ($feed_id == null) {
   $s['image'] = '<img style="height:100%;" src="http://www.nasa.gov/images/content/701204main_20121029-SANDY-GOES-FULL.jpg"/>';
 } else {
   // grab some info about the feed
-  
+  $feed = sign_feed_get_instance($feed_id);
+  error_log(print_r($feed,1));
+  $feed->getNext($screen_id, $feed_id);
   $s['image'] = $feed_id;
 }
 

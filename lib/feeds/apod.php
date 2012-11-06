@@ -14,6 +14,10 @@ class FeedAPOD {
   private $urlbase;
   private $feedinfo;
 
+  /*****************************************************************************
+   *
+   * Debugging functions
+   */
   private function dumpDom($dom, $item=null) {
     if ($item==null) $item = $dom;
     echo $dom->saveXML($item)."\n";
@@ -29,6 +33,17 @@ class FeedAPOD {
       echo "------- item list empty\n";
   }
   
+  /*****************************************************************************
+   *
+   * Extraction de données dans le dom
+   *
+   */
+
+  /****
+   *
+   * Titre de la page
+   */
+
   private function findCaption ($doc) {
     $caption = null;
     $title = $doc->getElementsByTagName('title');
@@ -42,7 +57,12 @@ class FeedAPOD {
     }
     return $caption;
   }
-
+  
+  /****
+   * 
+   * Fonction utilitaire de nettoyage du texte
+   * TODO: traiter les mots <majuscule><point> a la fin des lignes (recoller avec la ligne d'après)
+   */
   private function cleanText($string) {
     $tl = explode("\n",$string);
     $ta = [];
@@ -92,6 +112,10 @@ class FeedAPOD {
     return $string;
   }
   
+  /****
+   *
+   * Trouve le noeud des explications
+   */
   private function findExplNode ($list) {
     for ($i=0;$i<$list->length;$i++) {
       $item = $list->item($i);
@@ -102,6 +126,10 @@ class FeedAPOD {
     return null;
   }
 
+  /****
+   *
+   * Trouve les explications
+   */
   private function findExplanations ($doc) {
     $expl = null;
     $par = $doc->getElementsByTagName('p');
@@ -183,6 +211,11 @@ class FeedAPOD {
     return $expl;
   }
 
+  /****
+   *
+   * Trouve les images
+   */
+
   private function findImage ($doc) {
     // First check the wierd cases 
     // iframe (contains a youtube video ?) 
@@ -252,7 +285,17 @@ class FeedAPOD {
     $this->dumpDom($doc);
     exit(0);
   }
+  
+  /*****************************************************************************
+   *
+   * Fonction de récupération du contenu
+   *
+   */
 
+  /*****
+   * 
+   * Récupère une entrée du contenu APOD
+   */
   private function getApod($url) {
     echo "\n===================================================\n".$url;
     $f = fopen($url, 'r');
@@ -318,11 +361,20 @@ class FeedAPOD {
       echo " - file not found\n";
   }	
 
+  /****
+   * 
+   * Récupère une entrée de l'APOD par date
+   */
   private function getApodByDate ($date) {
     $url = $this->urlbase.'/ap'.$date->format('ymd').'.html';
     $this->getApod($url);
   }
 
+  /****
+   *
+   * Récupère l'intégralité des entrées de l'APOD depuis un certain fichier
+   * si $from est null, commence au début
+   */
   private function getApodFromStart ($url,$from=null) {
     $f = fopen($url, 'r');
     $d = '';
@@ -348,6 +400,12 @@ class FeedAPOD {
       }
     }
   }
+
+  /*****************************************************************************
+   *
+   * Mise à jour de l'APOD
+   *
+   */
 
   public function update () {
     $db = db_connect();
@@ -392,8 +450,17 @@ class FeedAPOD {
       // obtain the contents of the apod archive file
       $this->getApodFromStart($this->feedinfo['url']);
     }
-		
   }
+
+  /*****************************************************************************
+   *
+   * Generate the next APOD content available
+   *
+   */
+  public function getNext($screenid, $feedid) {
+    error_log ('FeedAPOD.getNext ($screenid='.$screenid.', $feedid='.$feedid.') invoked');
+  }
+
 }
 
 if (getenv('TERM')) {

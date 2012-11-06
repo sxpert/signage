@@ -44,16 +44,45 @@ function sign_update_screen ($id, $values) {
 }
 
 function get_screen_id ($ip_addr) {
-  $db = db_connect();
+  db_connect();
   $res = db_query('select get_screen_id($1) as id;', array($ip_addr));
   $row = db_fetch_assoc ($res);
   return $row['id'];
 }
 
 function get_next_feed_id ($screen_id) {
-  $bd = db_connect();
+  db_connect();
   $res = db_query('select get_next_feed_id($1) as feed_id', array($screen_id));
   $row = db_fetch_assoc ($res);
   return $row['feed_id'];
 }
+
+/*******************************************************************************
+ *
+ * Gestion des flux
+ * 
+ */
+
+/****
+ * 
+ * Crées une instance PHP du plugin d'un flux donné
+ */
+function sign_feed_get_instance ($feed_id) {
+  // récupérer la description du type de flux
+  db_connect();
+  $res = db_query('select php_script, php_class from feed_types as ft, feeds as f where ft.id=f.id_type and f.id=$1',
+		  array($feed_id));
+
+  // on a rien trouvé ?!
+  if ($res===false) return null;
+
+  // on a pas exactement une ligne (WTF ?)
+  if (db_num_rows($res)!=1) return null;
+
+  $feedinfo = db_fetch_assoc($res);
+  require_once (dirname(dirname(__file__)).$feedinfo['php_script']);
+  $instance = new $feedinfo['php_class']();
+  return $instance;
+}
+
 ?>
