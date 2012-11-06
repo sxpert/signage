@@ -72,6 +72,38 @@ if ($screen['adopted']=='t') {
  */
   echo "<h2>Flux sur cet écran</h2>\n";
 
+  // create the data array
+  $res = db_query('select sf.id_feed, sf.feed_order, sf.active, ft.name as type '.
+		  'from screen_feeds as sf, feeds as f, feed_types as ft '.
+                  'where sf.id_feed=f.id and f.id_type=ft.id and sf.id_screen=$1 '.
+		  'order by sf.feed_order;', array($screen['id']));
+  $feeds = array();
+  $headers = array(
+		   array('text'=>'Actif'),
+		   array('text'=>'Type')
+  );
+  $data = array();
+  while($row=db_fetch_assoc($res)) {
+    $r = array();
+    $values = array();
+    
+    // flux actif ?
+    if ($row['active']=='f')
+      array_push($values, 'non');
+    else
+      array_push($values, 'oui');
+    // type de flux
+    array_push ($values, $row['type']);
+
+    // TODO: petit nom du flux !
+
+    $r['values'] = $values;
+    array_push($data,$r);
+  }
+  $feeds['header'] = $headers;
+  $feeds['data'] = $data;
+  hlib_datatable($feeds);
+
   echo "<hr/>\n";
 
   echo "<h2>Oublier l'écran</h2>\n";

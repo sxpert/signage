@@ -17,7 +17,7 @@ $headers = array(
   array('text'=>'Adresse IP', 'colstyle'=>'width:100pt', 'cellstyle'=>'text-align:right;'),
   array('text'=>'Nom',        'colstyle'=>'width:200pt;'),
   array('text'=>'Actif',      'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
-  array('text'=>'Adopté',     'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
+  array('text'=>'Adopté',     'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
 );
 $data = array();
 while ($row=db_fetch_assoc($res)) {
