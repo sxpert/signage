@@ -162,6 +162,7 @@
     #content > form > div > div > select,
     #content > form > div > textarea,
     #content > form > div > button,
+    #content > form > div > span > button,
     #content > form > div > div > button {
 	    border: 1px solid #ccc;
       border-radius: 3px;
@@ -172,6 +173,7 @@
     #content > form > div > div > select,
     #content > form > div > textarea,
     #content > form > div > button,
+    #content > form > div > span > button,
     #content > form > div > div > button {
 	    height: 22px;
     }

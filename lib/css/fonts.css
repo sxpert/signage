@@ -11,6 +11,12 @@
     src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url('/lib/fonts/Ubuntu-Bold.ttf'), url('/lib/fonts/Ubuntu-Bold.woff');
 }
 @font-face {
+    font-family: 'Ubuntu';
+    font-style: normal;
+    font-weight: 200;
+    src: local('Ubuntu Light'), local('Ubuntu-Light'), url('/lib/fonts/Ubuntu-Light.ttf'), url('/lib/fonts/Ubuntu-Light.woff');
+}
+@font-face {
     font-family: 'OpenSymbol';
     font-style: normal;
     font-weight: normal;

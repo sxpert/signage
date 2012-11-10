@@ -868,6 +868,43 @@ function hlib_form_button ($form, $text, $action="") {
 
 /*****
  *
+ * Navigation dans une liste
+ *
+ */
+function hlib_form_nav ($form, $nav, $current_pos, $last_item, $nb_elems, 
+												$first_action, $prev_action, $next_action, $last_action) {
+	echo hlib_form_check_errors ($form, 'nav');
+	echo "<div id=\"".$nav."\">";
+	echo "<style type=\"text/css\" scoped>";
+	echo "#".$nav."{width:600pt;}";
+	echo "span{display:inline-block;}";
+	echo "button{width:5em;}";
+	echo "span#".$nav."-left{text-align:left;width:-webkit-calc(10em + 6px);}";
+	echo "span#".$nav."-center{text-align:center;width:-webkit-calc(600px - 20em - 14px);}";
+	echo "span#".$nav."-right{text-align:left;width:-webkit-calc(10em +6px);}";
+	echo "</style>";
+	echo "<span id=\"".$nav."-left\"";
+	if ($current_pos==0) echo "style=\"visibility:hidden;\" ";
+	echo "><button name=\"action\" value=\"".$first_action."\">&lt;&lt;</button>";
+	echo "<button name=\"action\" value=\"".$prev_action."\">&lt;</button></span>";
+	
+	// variables 
+	echo "<input type=\"hidden\" name=\"".$nav."[current-pos]\" value=\"".$current_pos."\"/>";
+	echo "<input type=\"hidden\" name=\"".$nav."[perpage]\" value=\"".$nb_elems."\"/>";
+	// fill in
+	echo "<span id=\"".$nav."-center\">";
+	echo "éléments ".$current_pos." à ".($current_pos+$nb_elems-1)." sur ".$last_item;
+	echo "</span>";
+
+	echo "<span id=\"".$nav."-right\"";
+	if (($current_pos+$nb_elems)>=$last_item) echo  "style=\"visibility:hidden;\" ";
+	echo "><button name=\"action\" value=\"".$next_action."\">&gt;</button>";
+	echo "<button name=\"action\" value=\"".$last_action."\">&gt;&gt;</button></span>";
+	echo "</div>\n";
+}
+
+/*****
+ *
  * Fin de formulaire
  *
  */

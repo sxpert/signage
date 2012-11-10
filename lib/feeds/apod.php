@@ -304,59 +304,68 @@ class FeedAPOD {
       // grab file contents
       $d = '';
       while (!feof($f))
-	$d.=fread($f,4096);
+	      $d.=fread($f,4096);
       fclose($f);
       // load into DOM
       $doc = new DomDocument();
       if (@$doc->loadHTML($d)) {
-	//his->dumpDom($doc,$doc);
-	//
-	echo ">>>>> caption\n";
-	$caption = $this->findCaption($doc);
-	echo $caption."\n";
-	//
-	echo ">>>>> explanations\n";
-	$explanations = $this->findExplanations($doc);
-	echo $explanations."\n";
-	//
-	$img = $this->findImage($doc);
-	echo ">>>>> img\n";
-	echo $img."\n";
+	      //his->dumpDom($doc,$doc);
+	      //
+	      echo ">>>>> caption\n";
+	      $caption = $this->findCaption($doc);
+	      echo $caption."\n";
+      	//
+	      echo ">>>>> explanations\n";
+	      $explanations = $this->findExplanations($doc);
+	      echo $explanations."\n";
+	      //
+	      $img = $this->findImage($doc);
+	      echo ">>>>> img\n";
+	      echo $img."\n";
 	
-	if ($img!=null) {
-	  //get date from url
-	  $u = parse_url($url);
-	  $path = $u['path'];
-	  $filename = basename($path);
-	  $install = get_install_path();
-	  $y = substr($filename,2,2);
-	  $m = substr($filename,4,2);
-	  $d = substr($filename,6,2);
-	  if ($y[0]=='9') 
-	    $y = '19'.$y;
-	  else
-	    $y = '20'.$y;
-	  $date = $y.'-'.$m.'-'.$d;
-	  $apodcache = $install."/cache/images/apod/".$y.'/'.$m.'/';
-	  make_webserver_dir ($apodcache);
+	      if ($img!=null) {
+	        //get date from url
+	        $uhtml = parse_url($url);
+	        $pathhtml = $uhtml['path'];
+	        $filehtml = basename($pathhtml);
+          $uimg = parse_url($img);
+          $pathimg = $uimg['path'];
+          $fileimg = basename($pathimg);
+          // ckeck extension
+          $extension = pathinfo($pathimg,PATHINFO_EXTENSION);
+          // TODO: look for a ? in the url...
+          error_log('imagefile is '.$pathimg.' file extension is '.$extension);
+          $idx = array_search($extension,array('jpg','gif','png'));
+          error_log('idx='.print_r($idx,1));
+          if ($idx!==false) {
+	          $install = get_install_path();
+	          $y = substr($filehtml,2,2);
+	          $m = substr($filehtml,4,2);
+	          $d = substr($filehtml,6,2);
+	          if ($y[0]=='9') 
+	            $y = '19'.$y;
+	          else
+	            $y = '20'.$y;
+	          $date = $y.'-'.$m.'-'.$d;
+	          $apodcache = $install."/cache/images/apod/".$y.'/'.$m.'/';
+	          make_webserver_dir ($apodcache);
 
-	  if (($u['scheme']=='http')&&($u['host']=='apod.nasa.gov')) {
-	    $fname = $apodcache.$d.'--'.basename($img);
-	    if (cache_url_to_file ($img, $fname))
-	      $img = $fname;
-	    else
-	      $img=null;
-	  }
-	  // push this new item in the database
-	  if ($img!=null)
-	    sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
-	  else
-	    echo "Unable to grab picture, skipping";
-	}
-	
+	          if (($uimg['scheme']=='http')&&($uimg['host']=='apod.nasa.gov')) {
+	            $fname = $apodcache.$d.'--'.basename($img);
+	            if (cache_url_to_file ($img, $fname))
+	              $img = $fname;
+	            else
+	              $img=null;
+	          }
+          } else $img=null;
+	        // push this new item in the database
+	        if ($img!=null)
+	          sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
+	        else
+	          echo "Unable to grab picture, skipping";
+	      }
       } else
-	echo "Error while loading document into DOM object\n";
-      
+	      echo "Error while loading document into DOM object\n";
     } else
       echo " - file not found\n";
   }	
@@ -452,30 +461,212 @@ class FeedAPOD {
     }
   }
 
+	private function resizeJPEG ($fn) {
+    // précalcul du nom de fichier
+    $dir = dirname($fn);
+    $fname = basename($fn);
+    $ext = pathinfo($fname,PATHINFO_EXTENSION);
+   
+	 	// identification de la taille de l'image 
+	 	$iinfo = getimagesize($fn,$info);
+    $width = $iinfo[0];
+    $height = $iinfo[1];
+
+    // l'image est elle vraiment trop grande ?
+    if ($width>(1920/3)) {
+      $nwidth = round(1920/3);
+      $nheight = round($nwidth*$height/$width);
+			error_log('FeedAPOD::resizeJPEG : '.$fname.' '.$width.' x '.$height.' => '.$nwidth.' x '.$nheight);
+      $nfn = $dir.'/'.substr($fname,0,2).'-w'.$nwidth.'.'.$ext;
+      $img = imagecreatefromjpeg($fn);
+      $imgs = imagecreatetruecolor($nwidth,$nheight);
+      if (imagecopyresampled($imgs,$img,0,0,0,0,$nwidth,$nheight,$width,$height)) {
+        imagedestroy($img);
+        if (imagejpeg($imgs,$nfn)) {
+          imagedestroy($imgs);
+          @chmod ($nfn, 0664);
+  				@chgrp ($nfn, 'www-data');        
+          return $nfn;
+        } else 
+          error_log ('une erreur s\'est produite lors de la sauvegarde de l\'image');
+      } else 
+        error_log('une erreur s\'est produite lors du redimensionnement');
+    } 
+		return $fn;
+	}
+
+	private function isAnimatedGIF($fn) {
+	  if(!($fh = @fopen($fn, 'rb')))
+	    return false;
+	  $count = 0;
+	  //an animated gif contains multiple "frames", with each frame having a 
+	  //header made up of:
+		// * a static 4-byte sequence (\x00\x21\xF9\x04)
+		// * 4 variable bytes
+		// * a static 2-byte sequence (\x00\x2C)
+		// We read through the file til we reach the end of the file, or we've found 
+		// at least 2 frame headers
+		while(!feof($fh) && $count < 2) {
+		  $chunk = fread($fh, 1024 * 100); //read 100kb at a time
+		  $count += preg_match_all('#\x00\x21\xF9\x04.{4}\x00\x2C#s', $chunk, $matches);
+		}
+		fclose($fh);
+		return $count;
+	}
+
+	private function resizeGIF ($fn) {
+    // précalcul du nom de fichier
+    $dir = dirname($fn);
+    $fname = basename($fn);
+    $ext = pathinfo($fname,PATHINFO_EXTENSION);
+	 	
+		// identification de la taille de l'image 
+		$iinfo = getimagesize ($fn,$info);
+    $width = $iinfo[0];
+    $height = $iinfo[1];
+		
+		$frames = $this->isAnimatedGIF($fn);
+		if ($frames===false) return $fn;
+		// we don't handle animated gifs !
+		if ($frames==1) {
+			// this is not an animated gif
+			if ($width>(1920/3)) {
+      	$nwidth = round(1920/3);
+      	$nheight = round($nwidth*$height/$width);
+				error_log('FeedAPOD::resizeGIF->PNG : '.$fname.' '.$width.' x '.$height.' => '.$nwidth.' x '.$nheight);
+				// replaces the gif file with a png
+				$nfn = $dir.'/'.substr($fname,0,2).'-w'.$nwidth.'.png';
+      	$img = imagecreatefromgif($fn);
+      	$imgs = imagecreatetruecolor($nwidth,$nheight);
+      	if (imagecopyresampled($imgs,$img,0,0,0,0,$nwidth,$nheight,$width,$height)) {
+        	imagedestroy($img);
+        	if (imagepng($imgs,$nfn,9,PNG_ALL_FILTERS)) {
+          	imagedestroy($imgs);
+          	@chmod ($nfn, 0664);
+  					@chgrp ($nfn, 'www-data');        
+          	return $nfn;
+        	} else 
+          	error_log ('une erreur s\'est produite lors de la sauvegarde de l\'image');
+      	} else 
+        	error_log('une erreur s\'est produite lors du redimensionnement');
+			}
+		}
+		return $fn;
+	}
+
+  private function updateImage ($fn) {
+		$finfo = finfo_open(FILEINFO_MIME_TYPE);
+		$fmime = finfo_file($finfo,$fn);
+		finfo_close($finfo);
+		
+		$nfn=$fn;
+		switch ($fmime) {
+			case 'image/jpeg':
+				$nfn = $this->resizeJPEG($fn);		
+				break;
+			case 'image/gif':
+				$nfn = $this->resizeGIF($fn);
+				break;
+			default:
+				error_log('unknown mime-type : '.$fmime);
+		}
+    return $nfn;
+  }
+
+
+  public function updatePics () {
+	  $basedir = get_install_path().'/cache/images/apod';
+    $f = list_all_files($basedir);
+    foreach ($f as $fn) {
+      if (strpos($fn,'w640')===false) {
+        $this->updateImage($fn);
+      }
+    }
+  }
+
   /*****************************************************************************
    *
    * Generate the next APOD content available
    *
    */
-  public function getNext($screenid, $feedid) {
-    error_log ('FeedAPOD.getNext ($screenid='.$screenid.', $feedid='.$feedid.') invoked');
+  public function getNext($screenid, $feedid, $target) {
+    //error_log ('FeedAPOD.getNext ($screenid='.$screenid.', $feedid='.$feedid.') invoked');
+    $signinfo = sign_feed_get_next ($screenid, $feedid);
+    if ($signinfo['id']===null) return null;
+    $id=$signinfo['id'];
+    $date = substr($signinfo['ts'],0,10);
+    // TODO: nasa logo ?
+    $nasalogofile = '/lib/images/NASA_logo.svg';
+    sign_preload_append($nasalogofile);
+    $d = sign_base_dir();
+    $len = strlen($d);
+	
+		$nfn=$fn=$signinfo['image'];
+    $nfn = $this->updateImage($fn);
+		if (strcmp($nfn,$fn)!=0) {
+			error_log('FeedAPOD::getNext::updateImage : file was changed to '.$nfn);
+			$fn = $nfn;
+      if (!sign_update_image_filename($id, $fn))
+        error_log('une erreur s\'est produite lors de la mise a jour du nom du fichier image dans la base');
+    }
+    $picpath = substr($fn,$len);
+
+    sign_preload_append($picpath);
+    $html = '<div id="apod'.$id.'">'.
+      '<style text="text/css" scoped>'.
+      '#apod'.$id.'{position:absolute;height:100%;font-size:70%;color:white;visibility:hidden;}'.
+      '#apodtitle'.$id.'{margin-bottom:0.2em;}'.
+      '#nasalogocell'.$id.'{display:table-cell;vertical-align:top;height:1.5em;width:1.5em;}'.
+      '#nasalogoimg'.$id.'{width:1.5em;height:1.5em;padding-left:4.5pt;background:-webkit-radial-gradient(circle closest-side, white 70%, white 30%, rgba(255,255,255,0));}'.
+      '#apoddateinfo'.$id.'{border-right:3px solid white;vertical-align:top;width:5.5em;display:table-cell;font-size:50%;padding-right:0.4em;text-align:right;}'.
+      '#apodcaption'.$id.'{display:table-cell;padding-left:0.2em;}'.
+      '#apodcontents'.$id.'{font-weight:200;font-size:45%;color:white;}'.
+      '#apodphotocell'.$id.'{display:table-cell;padding-right:0.3em;vertical-align:top;width:30%;}'.
+      '#apodphotoimg'.$id.'{width:100%;}'.
+      '#apodtextcell'.$id.'{display:table-cell;-webkit-column-count:2;text-align:justify;}'.
+      'p{margin-top:0;margin-bottom:0.3em;}'.
+      '</style>'.
+      '<div id="apodtitle'.$id.'">'.
+        '<span id="nasalogocell'.$id.'"><img id="nasalogoimg'.$id.'" src="'.$nasalogofile.'"/></span>'.
+        '<span id="apoddateinfo'.$id.'">APOD<br/>'.$date.'</span>'.
+        '<span id="apodcaption'.$id.'">'.$signinfo['caption'].'</span></div>'.
+      '<div id="apodcontents'.$id.'">'.
+        '<span id="apodphotocell'.$id.'"><img id="apodphotoimg'.$id.'" src="'.$picpath.'"/></span>'.
+        '<span id="apodtextcell'.$id.'"><p>'.implode("</p>\n<p>",explode("\n",$signinfo['detail'])).'</p></span>'.
+      '</div></div>';
+    $resp = array('html'=>$html,'delay'=>60);
+    return $resp;
   }
 
 }
 
 if (getenv('TERM')) {
   echo "command line\n";
-  $class = 'FeedAPOD';
-  $f = new $class();
-  $f->update();
+  switch ($argc) {
+    case 2 : 
+      switch ($argv[1]) {
+        case '--update-pics' :
+          $f = new FeedAPOD();
+          $f->updatePics();
+          break;
+      }
+      break;
+    default:
+      $class = 'FeedAPOD';
+      $f = new $class();
+      $f->update();
+  }
 } else {
-  echo "<html>\n";
-  echo "  <head>\n";
-  echo "    <title>Signage - Apod plugin</title>\n";
-  echo "  </head>\n";
-  echo "  <body>\n";
-  echo "    <p>Sorry, you can't call the apod plugin directly from the web</p>\n";
-  echo "  </body>\n";
-  echo "</html>\n";
+  if (!getenv('SIGNLIBLOADER')) {
+    echo "<html>\n";
+    echo "  <head>\n";
+    echo "    <title>Signage - Apod plugin</title>\n";
+    echo "  </head>\n";
+    echo "  <body>\n";
+    echo "    <p>Sorry, you can't call the apod plugin directly from the web</p>\n";
+    echo "  </body>\n";
+    echo "</html>\n";
+  } else 
+    putenv('SIGNLIBLOADER');
 }
 ?>

@@ -81,8 +81,9 @@ do $$
       
       -- insert basic feed types
       insert into feed_types (name, php_script, php_class) values 
-	('rss',  '/lib/feeds/rss.php',  'FeedRSS'), 
-	('apod', '/lib/feeds/apod.php', 'FeedAPOD');
+				('rss',  '/lib/feeds/rss.php',  'FeedRSS'), 
+				('apod', '/lib/feeds/apod.php', 'FeedAPOD'),
+        ('manuel', '/lib/feeds/manual.php', 'FeedManual');
 	
       --	
       -- feeds
@@ -90,10 +91,12 @@ do $$
       -- cached : defines if the feed contents is to be saved 
       raise notice 'Creating feeds';
       create table feeds (
-	id	bigint not null,
-	id_type	bigint not null,
-	url	text
-      );
+				id			bigint not null,
+				id_type	bigint not null,
+      	name 		text,
+				url			text,
+       	system 	boolean default false
+     );
 
       create sequence seq_feeds;
       alter table feeds alter column id set default nextval('seq_feeds');
@@ -107,19 +110,19 @@ do $$
 
       -- insert the APOD feed
       select id into apod_id from feed_types where name='apod';
-      insert into feeds (id_type, url) values
-      	(apod_id, 'http://apod.nasa.gov/apod/archivepix.html');
+      insert into feeds (id_type, name, url, system) values
+      	(apod_id, 'Astronomy Picture Of the Day', 'http://apod.nasa.gov/apod/archivepix.html', true);
 			
       --
       -- contents of feeds (cached data)
       --
       create table feed_contents (
         id   	   	bigint not null,
-	id_feed	bigint 	not null,
-	date		timestamp,
-	title		text,	
-	image		text,
-	detail		text
+				id_feed		bigint 	not null,
+				date			timestamp,
+				title			text,	
+				image			text,
+				detail		text
       );		
 
       create sequence seq_feed_contents;
@@ -143,12 +146,12 @@ do $$
       -- screens table
       -- 
       create table screens (
-        id           bigint not null,
-        screen_ip    inet not null,
-	name 	     text,
-        enabled      boolean default false,
-	current_feed bigint,
-      	adopted      boolean default false
+        id           	bigint not null,
+        screen_ip    	inet not null,
+				name 	     		text,
+        enabled      	boolean default false,
+				current_feed 	bigint,
+      	adopted      	boolean default false
       );
       
       create sequence seq_screens;
@@ -171,6 +174,7 @@ do $$
         id_feed      bigint not null,
       	feed_order   bigint,
       	active 	     boolean default false,
+      	target 	     text,
       	current_item bigint
       );
       
@@ -196,32 +200,18 @@ do $$
   declare
     apod_id	bigint;
   begin
-    if update_version(5,2) then
-
-      --
-      -- ajoute un nom aux feeds
-      --
-      alter table feeds add column name text;
-      
-      --
-      -- ajoute un booléen pour définir les feeds système (non supprimables)
-      -- 
-      alter table feeds add column system boolean default false;
-
-      --
-      -- modifie le flux apod, ajoute nom et état système
-      -- 
+    if update_version(2,3) then
+    	--
+			-- champ dateonly boolean, afficher seulement la date pour ce feed
+			--
+			alter table feeds add column dateonly boolean default false;
       select id into apod_id from feed_types where name='apod';
-      update feeds set name='Astronomy Picture Of the Day', system=true where id_type=apod_id;
-      
-      --
-      -- ajoute un type de flux manuel
-      --
-      insert into feed_types (name, php_script, php_class) values
-        ('manuel', '/lib/feeds/manual.php', 'FeedManual');
-      
-      
-
+			update feeds set dateonly = true where id=apod_id;
+			--
+			-- champ active sur chaque item
+			--
+			alter table feed_contents add column active boolean default false;
+			update feed_contents set active=true;
     end if; 
   end;
 $$;
@@ -281,7 +271,8 @@ do $$
               return null;
             end if;
           else
-            select id_feed into t_next_feed from screen_feeds where id_screen = l_screen_id and id_feed > t_current_feed order by id_feed limit 1;
+            select id_feed into t_next_feed from screen_feeds 
+							where id_screen = l_screen_id and id_feed > t_current_feed order by id_feed limit 1;
             raise notice 't_next_feed %',t_next_feed;
             if not found then
               -- get first feed
@@ -303,23 +294,27 @@ do $$
       --
       create or replace function get_next_feed_content (l_screen_id bigint, l_feed_id bigint) returns record as $q$
         declare
-          t_curr_content_id bigint;
+          t_feed            record;
           t_next_content_id bigint;
+          t_content_target  text;
           t_next_content    record;
         begin
-          t_next_content_id := null; 
-          select current_item into t_curr_content_id from screen_feeds where id_screen = l_screen_id and id_feed = l_feed_id;
+          t_next_content_id := null;
+          -- get the current item and target
+          select current_item as item, target into t_feed from screen_feeds 
+						where id_screen = l_screen_id and id_feed = l_feed_id;
           if not found then
             return null;
           end if;
-          if t_curr_content_id is null then
+          if t_feed.item is null then
             -- find the first item from the feed
             select min(id) into t_next_content_id from feed_contents where id_feed = l_feed_id;
             if not found then
               return null;
             end if;
           end if;
-          select  id into t_next_content_id from feed_contents where id_feed = l_feed_id and id > t_curr_content_id order by id limit 1;
+          select  id into t_next_content_id from feed_contents 
+						where id_feed = l_feed_id and id > t_feed.item order by id limit 1;
           if not found then
             select min(id) into t_next_content_id from feed_contents where id_feed = l_feed_id;
             if not found then
@@ -328,7 +323,7 @@ do $$
           end if;
           -- update the feed_content_id
           update screen_feeds set current_item = t_next_content_id where id_screen = l_screen_id and id_feed = l_feed_id;
-          select * into t_next_content from feed_contents where id = t_next_content_id;
+          select *, t_feed.target as target into t_next_content from feed_contents where id = t_next_content_id;
           return t_next_content;
         end;
       $q$ language plpgsql;

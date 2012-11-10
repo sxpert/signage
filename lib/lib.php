@@ -63,4 +63,44 @@ function get_remote_ip () {
   return $_SERVER['REMOTE_ADDR'];
 }
 
+function find_dirs($dir) {
+  $dirs = array();
+  $d = opendir($dir);
+  if ($d!==false) {
+    while (($td = readdir($d))!==false) {
+      // skip '.' and '..'
+      if (($td!='.')&&($td!='..')) {
+        $fn = $dir.'/'.$td;
+        // stat file to identify directories
+        if (is_dir($fn)) array_push($dirs,$fn);
+      }
+    }
+    closedir($d);
+  }
+  return $dirs;
+}
+
+
+function list_all_files($fn) {
+  $files = array();
+  if (is_dir($fn)) {
+    // file is a directory, recurse
+    $d = opendir($fn);
+    if ($d!==false) {
+      while (($f=readdir($d))!==false) {
+        // skip '.' and '..'
+        if (($f!='.')&&($f!='..')) {
+          $td = list_all_files($fn.'/'.$f);
+          $files = array_merge($files,$td);
+        }
+      }
+    }
+  } else {
+    // basic file, just return
+    array_push($files,$fn);
+  }
+  sort($files);
+  return $files;
+}
+
 ?> 
