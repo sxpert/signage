@@ -216,6 +216,105 @@ do $$
   end;
 $$;
 
+do $$
+	begin
+		if update_version(3,4) then
+			-- 
+			-- vue pour les types de flux
+			--
+			create or replace view feed_type_list as select id as key, name as value from feed_types order by name;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(4,5) then
+			-- 
+			-- vue pour les types de flux
+			--
+			grant select on feed_type_list to signage;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(5,6) then
+			-- 
+			-- ajout d'un champ systeme pour les types de flux (empeche de créer des flux de ce type par l'interface)
+			--
+			alter table feed_types add column system boolean default false;
+			--
+			-- rends le flux apod 'systeme'
+			--
+			update feed_types set system=true where name='apod';
+			-- 
+			-- vue pour le select de la liste des types
+			-- 
+			create or replace view feed_type_list as select id as key, name as value from feeds where system=false order by name;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(6,7) then
+			-- 
+			-- l'utilisateur signage doit pouvoir modifier les flux
+			--
+			grant insert, update on feeds to signage;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(7,8) then
+			-- 
+			-- l'utilisateur signage doit pouvoir modifier les flux
+			--
+			grant usage on seq_feeds to signage;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(8,9) then
+			-- 
+			-- index unique sur les noms des flux
+			--
+			alter table feeds alter column name set not null;
+      create unique index un_feeds__name on feeds(name);
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(9,11) then
+			-- 
+			-- index unique sur les noms des flux
+			--
+			drop index ix_feeds__url;
+      create unique index un_feeds__url_name on feeds(url,name);
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(11,12) then
+			-- 
+			-- vue sur les flux pour le select
+			--
+			create or replace view feed_list as select id as key, name as value from feeds order by name;
+			grant select on feed_list to signage;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(12,13) then
+			alter table screens drop constraint fk_screens__current_feed;
+		end if;
+	end;
+$$;
+
 --
 -- ces fonctions sont 'in flux'
 --
@@ -250,38 +349,46 @@ do $$
       --
       create or replace function get_next_feed_id (l_screen_id bigint) returns bigint as $q$
         declare
-          t_current_feed bigint;
-          t_next_feed    bigint;
+          t_curr_index bigint;
+					t_next_index bigint;
+          t_next_feed  bigint;
         begin
-          select current_feed into t_current_feed from screens where id = l_screen_id;
-          raise notice 'current_feed %',t_current_feed;
+          select current_feed into t_curr_index from screens 
+						where id = l_screen_id and adopted = true and enabled = true for update;
+          raise notice 'current_feed %',t_curr_index;
           if not found then
             -- unable to find the line for that screen id
             raise notice 'not found, returning null';
             return null;
           end if;
-          if t_current_feed is null then
-            raise notice 't_current_feed is null';
+          if t_curr_index is null then
+            raise notice 't_curr_index is null';
             -- find the lower number feed for this screen
-            select min(id_feed) into t_next_feed from screen_feeds where id_screen = l_screen_id;
-            raise notice 't_next_feed %',t_next_feed;
+            select min(feed_order) into t_next_index from screen_feeds 
+							where id_screen = l_screen_id and active = true;
+            raise notice 't_next_feed %',t_next_index;
             -- no feed for this screen, return null !
             if not found then
               raise notice 'not found, return null';
               return null;
             end if;
           else
-            select id_feed into t_next_feed from screen_feeds 
-							where id_screen = l_screen_id and id_feed > t_current_feed order by id_feed limit 1;
-            raise notice 't_next_feed %',t_next_feed;
+            select feed_order into t_next_index from screen_feeds 
+							where id_screen = l_screen_id and feed_order > t_curr_index and active = true
+							order by feed_order limit 1;
+            raise notice 't_next_index %',t_next_index;
             if not found then
               -- get first feed
-              select min(id_feed) into t_next_feed from screen_feeds where id_screen = l_screen_id;
-              raise notice 't_next_feed %',t_next_feed;
+              select min(feed_order) into t_next_index from screen_feeds 
+								where id_screen = l_screen_id and active = true;
+              raise notice 't_next_index %',t_next_index;
             end if;
           end if;
           -- update the record
-          update screens set current_feed = t_next_feed where id = l_screen_id;
+          update screens set current_feed = t_next_index where id = l_screen_id;
+					-- get the corresponding feed_id
+					select id_feed into t_next_feed from screen_feeds 
+						where id_screen = l_screen_id and feed_order = t_next_index;
           return t_next_feed;
         end;
       $q$ language plpgsql;
@@ -302,31 +409,89 @@ do $$
           t_next_content_id := null;
           -- get the current item and target
           select current_item as item, target into t_feed from screen_feeds 
-						where id_screen = l_screen_id and id_feed = l_feed_id;
+						where id_screen = l_screen_id and id_feed = l_feed_id 
+						for update;
           if not found then
             return null;
           end if;
+					-- there is no item yet
           if t_feed.item is null then
-            -- find the first item from the feed
-            select min(id) into t_next_content_id from feed_contents where id_feed = l_feed_id;
+            -- find the first item from the feed by date
+            select id into t_next_content_id from feed_contents 
+							where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
+										and id_feed = l_feed_id ;
             if not found then
               return null;
             end if;
-          end if;
-          select  id into t_next_content_id from feed_contents 
-						where id_feed = l_feed_id and id > t_feed.item order by id limit 1;
-          if not found then
-            select min(id) into t_next_content_id from feed_contents where id_feed = l_feed_id;
-            if not found then
-              return null;
-            end if;
-          end if;
+          else
+						-- we had something already, find the next one
+						-- select  id from feed_contents where id_feed = 5 and date > (select date from feed_contents where id= 6590) and active= true order by date;
+          	select  id into t_next_content_id from feed_contents 
+							where id_feed = l_feed_id and date > (select date from feed_contents where id = t_feed.item)
+								    and active = true order by date limit 1;
+          	if not found then
+            	select id into t_next_content_id from feed_contents 
+								where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
+									  	and id_feed = l_feed_id ;
+            	if not found then
+              	return null;
+            	end if;
+          	end if;
+					end if;
           -- update the feed_content_id
           update screen_feeds set current_item = t_next_content_id where id_screen = l_screen_id and id_feed = l_feed_id;
           select *, t_feed.target as target into t_next_content from feed_contents where id = t_next_content_id;
           return t_next_content;
         end;
       $q$ language plpgsql;
+
+			-------------------------------------------------------------------------
+			--
+			-- ajoute un flux a un écran
+			-- 
+			--
+			create or replace function screen_append_feed (l_screen bigint,l_feed bigint,l_active boolean,l_target text) returns boolean as $q$
+				declare
+					t_order	bigint;
+				begin
+					-- lock table
+					perform * from screen_feeds for update;
+					-- find next available position
+					select max(feed_order) into t_order from screen_feeds where id_screen = l_screen;
+					if t_order is null then
+						t_order := 0;
+					end if;
+					begin
+						insert into screen_feeds (id_screen, id_feed, feed_order, active, target)
+							values (l_screen, l_feed, (t_order+1), l_active, l_target);
+					exception when unique_violation then
+						return false;
+					end;
+					return true;
+				end;
+			$q$ language plpgsql;
+
+			-------------------------------------------------------------------------
+			-- 
+			-- Mets a jour les flux dans l'écran
+			-- 
+			-- 
+
+			create or replace function screen_active_feeds (l_screen bigint, l_feeds bigint array) returns boolean as $q$
+				declare
+					t_feed record;
+					t_active boolean;
+				begin
+					raise notice '%', l_feeds;
+					-- TODO: check if array contents are within feed ids
+					for t_feed in select * from screen_feeds where id_screen = l_screen for update loop
+						raise notice '%', t_feed;
+						t_active := array[ t_feed.id_feed ] <@ l_feeds;
+						update screen_feeds set active=t_active where id_screen = l_screen and id_feed = t_feed.id_feed;
+					end loop;
+					return true;
+				end;
+			$q$ language plpgsql;
   end;
 $$;
 

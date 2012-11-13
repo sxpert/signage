@@ -14,10 +14,11 @@ db_connect();
 $res = db_query ('select * from screens order by id;');
 $screens = array();
 $headers = array(
-  array('text'=>'Adresse IP', 'colstyle'=>'width:100pt', 'cellstyle'=>'text-align:right;'),
-  array('text'=>'Nom',        'colstyle'=>'width:200pt;'),
-  array('text'=>'Actif',      'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
-  array('text'=>'Adopté',     'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
+  array('text'=>'Adresse IP',    'colstyle'=>'width:100pt', 'cellstyle'=>'text-align:right;'),
+  array('text'=>'Nom de machine','colstyle'=>'width:200pt;','cellstyle'=>''),
+  array('text'=>'Nom',           'colstyle'=>'width:200pt;','cellstyle'=>'text-overflow:ellipsis;'),
+  array('text'=>'Actif',         'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
+  array('text'=>'Adopté',        'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
 );
 $data = array();
 while ($row=db_fetch_assoc($res)) {
@@ -28,6 +29,7 @@ while ($row=db_fetch_assoc($res)) {
   $values = array();
   // adresse ip
   array_push($values, $row['screen_ip']);
+  array_push($values, gethostbyaddr($row['screen_ip']));
   // nom de l'écran
   if ($row['name']=='')
     array_push($values, "<i>inconnu</i>");

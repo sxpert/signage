@@ -19,12 +19,6 @@ function sign_lib_dir () {
   return dirname(__file__);
 }
 
-function sign_add_feed_entry ($feed_id, $date, $title, $image, $detail) {
-  db_connect();
-
-  db_query('insert into feed_contents (id_feed, date, title, image, detail) values ($1,$2,$3,$4,$5);',
-	   array($feed_id, $date, $title, $image, $detail));
-}
 
 /******************************************************************************
  *
@@ -79,6 +73,24 @@ function sign_update_screen ($id, $values) {
   return db_update ('screens', array('id', $id), $values);
 }
 
+function sign_screen_add_feed($id, $feedid, $active) {
+	db_connect();
+	$res = db_query('select screen_append_feed($1,$2,$3,$4) as ok;',
+									array($id,$feedid,$active,'image'));
+	$r = db_fetch_assoc($res);
+	return $r['ok'];
+}
+
+function sign_screen_activate_feeds ($screen,$feeds) {
+	db_connect();
+	$k = array_keys($feeds);
+	// check if all are integers, dump the rest
+	$f = '{'.implode(',',$k).'}';
+	$res = db_query ('select screen_active_feeds ($1,$2) as ok;',array($screen,$f));
+	$r = db_fetch_assoc($res);
+	return $r['ok'];
+}
+
 function get_screen_id ($ip_addr) {
   db_connect();
   $res = db_query('select get_screen_id($1) as id;', array($ip_addr));
@@ -90,7 +102,7 @@ function get_next_feed_id ($screen_id) {
   db_connect();
   $res = db_query('select get_next_feed_id($1) as feed_id', array($screen_id));
   $row = db_fetch_assoc ($res);
-  return $row['feed_id'];
+  eturn $row['feed_id'];
 }
 
 /*******************************************************************************
@@ -105,13 +117,51 @@ function get_next_feed_id ($screen_id) {
  *
  */
 
-function sign_feed_exists($feed_id, $bomb=false) {
+function sign_feed_get($feed_id, $bomb=false) {
   db_connect();
-  $res = db_query('select id from feeds where id = $1', array($feed_id));
+  $res = db_query('select * from feeds where id = $1', array($feed_id));
   $exists = (db_num_rows($res)==1);
-  if ($bomb&&(!$exists)) 
-    hlib_fatal("Le numéro de flux n'existe pas");
+  if (!$exists) { 
+  	if ($bomb)
+			hlib_fatal("Le numéro de flux [".$feed_id."] n'existe pas");
+		else 
+			return null;
+	}
+	$r = db_fetch_assoc($res);
+	return $r;
 }
+
+/****
+ *
+ *
+ *
+ */
+function sign_feed_modify($feed) {
+	db_connect();
+	return db_update ('feeds', 
+		array('id',$feed['id']),
+		array (
+			'url' => $feed['url'],
+			'name' => $feed['name']
+		)
+	);
+}
+
+/****
+ *
+ * Récupères le type de flux
+ * 
+ */
+function sign_feed_get_type ($feed_id) {
+	db_connect();
+	$res = db_query('select ft.name as type from feed_types as ft, feeds as f '.
+									'where ft.id=f.id_type and f.id=$1;',array($feed_id));
+	if ($res===false) return null;
+	if (db_num_rows($res)!=1) return null;
+	$r = db_fetch_assoc($res);
+	return $r['type'];
+}
+
 
 /****
  *
@@ -124,6 +174,40 @@ function sign_feed_number_items ($feed_id) {
 	if (db_num_rows($res)!=1) return false;
 	$row= pg_fetch_assoc($res);
 	return $row['items'];
+}
+
+/****
+ *
+ * Ajout d'un item au flux
+ *
+ */
+function sign_add_feed_entry ($feed_id, $date, $title, $image, $detail,$active=false) {
+  db_connect();
+
+  $res = db_query('insert into feed_contents (id_feed, date, title, image, detail,active) '.
+		'values ($1,$2,$3,$4,$5,$6) returning id;',
+	  array($feed_id, $date, $title, $image, $detail,$active));
+	if ($res===false) return false;
+	if (db_affected_rows($res)!=1) return false;
+	$r = db_fetch_assoc($res);
+	return $r['id'];
+}
+
+/****
+ *
+ * Modification d'un item de flux
+ *
+ */
+function sign_feed_modify_entry ($id,$feed_id,$date,$title,$image,$detail,$active) {
+	db_connect();
+	$sql = 'update feed_contents set '.
+				 'date=$1, title=$2, image=$3, detail=$4, active=$5 '.
+				 'where id=$6 and id_feed=$7;';
+	$arr = array($date,$title,$image,$detail,($active?'t':'f'),$id,$feed_id);
+	$res = db_query($sql,$arr);
+	if ($res===false) return db_last_error();
+	if (db_affected_rows($res)!=1) return false;
+	return true;
 }
 
 /****
@@ -162,16 +246,32 @@ function sign_feed_get_instance ($feed_id) {
 
   $feedinfo = db_fetch_assoc($res);
   putenv("SIGNLIBLOADER=true");
-  require_once (dirname(dirname(__file__)).$feedinfo['php_script']);
+	$phpscript = dirname(dirname(__file__)).$feedinfo['php_script'];
+	if (!is_readable($phpscript)) return null;
+  require_once ($phpscript);
   $instance = new $feedinfo['php_class']();
   return $instance;
+}
+
+function sign_feed_get_item ($id, $bomb=false) {
+  db_connect();
+  $res = db_query('select * from feed_contents where id = $1', array($id));
+  $exists = (db_num_rows($res)==1);
+  if (!$exists) {
+		if ($bomb)
+    	hlib_fatal("Le numéro de flux n'existe pas");
+		else
+			return null;
+	}
+	$r = db_fetch_assoc($res);
+	return $r;
 }
 
 function sign_feed_get_next ($screenid, $feedid) {
   db_connect();
   $sql = 'select * from get_next_feed_content($1, $2) as ('.
          'id bigint, feed_id bigint, ts timestamp, caption text, '.
-         'image text, detail text, target text);';
+         'image text, detail text, active boolean, target text);';
   $res = db_query($sql, array($screenid, $feedid));
   if ($res===false) return null;
   if (db_num_rows($res)!=1) return null; // can't happen

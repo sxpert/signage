@@ -1,13 +1,16 @@
 <?php
 $d = dirname(dirname(__file__));
-require_once($d.'/lib/hlib.php');
 require_once($d.'/lib/signlib.php');
+
+$errors=array();
 
 /* display the list of screens */
 
 hlib_style_add('css/screens.css');
 hlib_top();
 hlib_menu(sign_admin_menu());
+
+echo "<h2>Flux d'informations disponibles</h2>\n";
 
 // lister les écrans
 db_connect();
@@ -46,6 +49,12 @@ while ($row=db_fetch_assoc($res)) {
 $feeds['header'] = $headers;
 $feeds['data'] = $data;
 hlib_datatable($feeds);
+
+
+$form=hlib_form('post','feed-details.php',$errors,array());
+hlib_form_hidden($form,'id','new');
+hlib_form_button($form,'Créer un nouveau flux','create-new');
+hlib_form_end($form);
 
 //hlib_script_add('js/screens.js', -1);
 hlib_footer();

@@ -43,8 +43,6 @@ function updateZone(data) {
     d = null;
     z = null;
     try {
-      console.error('garbage collection');
-			console.error( document.getElementsByTagName('*').length );
       window.gc();
     } catch (e) {
       // do nothing
@@ -106,7 +104,7 @@ function createBackgroundZones(data) {
   $b.css('width', data.resolution.width);  
   $b.css('height', data.resolution.height);
   $b.css('overflow', 'hidden');
-  $b.append(createLoadIndicator());
+  //$b.append(createLoadIndicator());
   var z = data.zones;
   for (var i=0; i<z.length; i++) {
     $b.append(createZone (z[i]));

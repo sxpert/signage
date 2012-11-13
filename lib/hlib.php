@@ -23,6 +23,10 @@ function hlib_get_variable ($array, $varname) {
   }
 }
 
+function hlib_get_numeric_variable($array,$varname) {
+	return (0+trim(hlib_get_variable($array,$varname)));
+}
+
 function hlib_get_checkbox ($array, $varname) {
   $v = strtolower(trim(hlib_get_variable ($array, $varname)));
   if (strcmp($v, 'on')==0) return true;
@@ -172,6 +176,8 @@ function hlib_add_jqueryui() {
   hlib_script_add ("http://code.jquery.com/ui/1.9.1/jquery-ui.js", -1);
   //hlib_style_add ("/lib/jquery/ui/css/".$JQUERYUI_THEME."/jquery-ui-".$JQUERYUI_VER.".custom.css");
   hlib_style_add ("http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css");
+	hlib_script_add ("/lib/jquery/jQuery-Timepicker-Addon/jquery-ui-timepicker-addon.js",-1);
+	hlib_style_add ("/lib/jquery/jQuery-Timepicker-Addon/jquery-ui-timepicker-addon.css");
 }
 
 /*****
@@ -181,7 +187,8 @@ function hlib_add_jqueryui() {
  */
 
 function hlib_xhtml_header () {
-  echo "<"."?xml version=\"1.0\" encoding=\"UTF-8\"?".">\n";
+	header('Content-Type: text/html; charset=utf-8');
+	echo "<"."?xml version=\"1.0\" encoding=\"UTF-8\"?".">\n";
   echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
   echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"fr\">\n";
 }
@@ -499,32 +506,34 @@ function hlib_form_check_url($url,&$e) {
   }
   error_log('scheme ok');
   if (array_key_exists('host',$u)) {
-    $ips = dns_get_record($u['host']);
+    $ipv4 = dns_get_record($u['host'],DNS_A);
+		$ipv6 = dns_get_record($u['host'],DNS_AAAA);
+		$ips = array_merge($ipv4, $ipv6);
     if ((is_bool($ips)&&!$ips)||(count($ips)==0)) {
       $e = 'Serveur \''.$u['host'].'\' introuvable';
       return false;
     }
     error_log('dns ok');
-    error_log(print_r($ips,1));
+    //error_log(print_r($ips,1));
     if (!array_key_exists('proxyhost',$HTTP_OPTS)) {
       /* trouve si une des adresses réponds */
       $ok = false;
       foreach ($ips as $ip) {
         switch ($ip['type']) {
         case 'A':
-  	  $s=socket_create(AF_INET,SOCK_STREAM,SOL_TCP);
-	  $ok |= @socket_connect($s,$ip['ip'],$u['port']);
-	  error_log($ip['type'].' - '.$ip['ip'].':'.$u['port'].' '.($ok?'ok':'nok'));
-	  socket_close($s);
-	  break;
+  	  		$s=socket_create(AF_INET,SOCK_STREAM,SOL_TCP);
+	  			$ok |= @socket_connect($s,$ip['ip'],$u['port']);
+	  			error_log($ip['type'].' - '.$ip['ip'].':'.$u['port'].' '.($ok?'ok':'nok'));
+	  			socket_close($s);
+	  			break;
         case 'AAAA':
- 	  $s=socket_create(AF_INET6,SOCK_STREAM,SOL_TCP);
-	  $ok |= @socket_connect($s,$ip['ipv6'],$u['port']);
-	  error_log($ip['type'].' - ['.$ip['ipv6'].']:'.$u['port'].' '.($ok?'ok':'nok'));
-	  socket_close($s);
-	  break;
+ 	  			$s=socket_create(AF_INET6,SOCK_STREAM,SOL_TCP);
+	  			$ok |= @socket_connect($s,$ip['ipv6'],$u['port']);
+	  			error_log($ip['type'].' - ['.$ip['ipv6'].']:'.$u['port'].' '.($ok?'ok':'nok'));
+	  			socket_close($s);
+	  			break;
         default:
-  	  continue;
+  	  		continue;
         }
       }
     } else {
@@ -541,10 +550,19 @@ function hlib_form_check_url($url,&$e) {
   }
   /* timeout a 5 secondes */
   /* TODO: handle when http_head doesn't exist */
-  $r = http_head($url,$HTTP_OPTS,$info);
-  error_log($r);  
-  error_log(print_r($info,1));
-  if ($info['response_code']>=400) {
+
+  //$r = http_head($url,$HTTP_OPTS,$info);
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_NOBODY, true);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+	$head = curl_exec($ch);
+	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	
+  error_log($url.' => '.$httpcode);  
+  error_log($head);
+  if ($httpcode>=400) {
     $e = 'Accès au document impossible';
     return false;
   }
@@ -602,13 +620,26 @@ function hlib_form_check_multi ($values, $table) {
  * Début de formulaire
  *
  */
-function hlib_form ($method, $action, $errors, $id=null, $style=null) {
+function hlib_form ($method, $action, $errors, $options=null) {
+	$id=null;
+	$style=null;
+	$stylesheet=null;
+	if (is_array($options)) {
+		if (array_key_exists('id',$options)) $id=$options['id'];
+		if (array_key_exists('style',$options)) $style=$options['style'];
+		if (array_key_exists('stylesheet',$options)) $stylesheet=$options['stylesheet'];
+	}
   if ($id!==null)
     hlib_form_check_errors ($errors, $id);
   echo "<form method=\"".$method. "\" action=\"".$action."\"";
   if (!is_null($id)) echo " id=\"".$id."\"";
   if (!is_null($style)) echo " style=\"".$style."\"";
   echo ">\n";
+	if (!is_null($stylesheet)) {
+		echo "<style type=\"text/css\" scoped>";
+		echo $stylesheet;
+		echo "</style>\n";
+	}
   return $errors;
 }
 
@@ -664,6 +695,9 @@ function hlib_form_text ($form, $label, $variable, $value="", $width=null, $leng
 function hlib_form_date ($form, $label, $variable, $value="") {
   echo hlib_form_check_errors ($form, $variable);
   echo "<div>";
+	echo "<style type=\"text/css\" scoped>";
+	echo "input.hasDatepicker{width:60pt;text-align:center;}";
+	echo "</style>";
   echo "<label for=\"".$variable."\">".$label."</label>";
   echo "<input type=\"text\" id=\"".$variable."\" name=\"".$variable."\"";
   if (strlen($value)>0) echo " value=\"".hlib_form_escape_value($value)."\"";
@@ -671,12 +705,40 @@ function hlib_form_date ($form, $label, $variable, $value="") {
 
   // https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js
   
-  hlib_script_add("$(function() { $(\"#".$variable."\").datepicker({showOn:\"button\",".
-		 "buttonImage: \"/lib/jquery/ui/development-bundle/demos/datepicker/images/calendar.gif\"".
-		 ",buttonImageOnly: true,".
+  hlib_script_add("$(function() { $(\"#".$variable."\").datepicker({".
+		 "showOn:\"button\",".
+		 "buttonImage: \"/lib/images/calendar.gif\",".
+		 "buttonImageOnly: true,".
 		 "dateFormat: \"yy-mm-dd\"".
 		 "});});","_begin");
   
+}
+
+/*****
+ *
+ * Champ date (avec un calendrier en jqueryui)
+ *
+ */
+function hlib_form_datetime ($form, $label, $variable, $value="") {
+  echo hlib_form_check_errors ($form, $variable);
+  echo "<div>";
+	echo "<style type=\"text/css\" scoped>";
+	echo "input.hasDatepicker{width:100pt;text-align:center;}";
+	echo "</style>";
+  echo "<label for=\"".$variable."\">".$label."</label>";
+  echo "<input type=\"text\" id=\"".$variable."\" name=\"".$variable."\"";
+  if (strlen($value)>0) echo " value=\"".hlib_form_escape_value($value)."\"";
+  echo "/></div>\n";
+
+	hlib_script_add(
+		"$(function() { $(\"#".$variable."\").datetimepicker({".
+		"  showOn: \"button\",".
+		"  buttonImage: \"/lib/images/calendar.gif\",".
+		"  buttonImageOnly: true,".
+		"  showSecond: true,".
+		 "dateFormat: \"yy-mm-dd\",".
+		 "timeFormat: \"HH:mm:ss\"".
+		"}) });","_begin");
 }
 
 /*****
@@ -868,6 +930,27 @@ function hlib_form_button ($form, $text, $action="") {
 
 /*****
  *
+ * Boutons multiples
+ *
+ */
+function hlib_form_buttons ($form, $buttons) {
+	if (is_array($buttons)) {
+  	echo "<div><span>";
+		foreach ($buttons as $b) {
+			if (array_key_exists('text',$b)) $text = $b['text'];
+			else $text = 'bouton vide';
+			if (array_key_exists('action',$b)) $action = $b['action'];
+			else $action = '';
+  		echo "<button";
+  		if (strlen($action)>0) echo " name=\"action\" value=\"".$action."\"";
+  		echo ">".$text."</button>";
+		}
+  	echo "</span></div>\n";
+	}
+}
+
+/*****
+ *
  * Navigation dans une liste
  *
  */
@@ -877,11 +960,18 @@ function hlib_form_nav ($form, $nav, $current_pos, $last_item, $nb_elems,
 	echo "<div id=\"".$nav."\">";
 	echo "<style type=\"text/css\" scoped>";
 	echo "#".$nav."{width:600pt;}";
-	echo "span{display:inline-block;}";
-	echo "button{width:5em;}";
-	echo "span#".$nav."-left{text-align:left;width:-webkit-calc(10em + 6px);}";
-	echo "span#".$nav."-center{text-align:center;width:-webkit-calc(600px - 20em - 14px);}";
-	echo "span#".$nav."-right{text-align:left;width:-webkit-calc(10em +6px);}";
+	echo "#".$nav." > span{display:inline-block;margin-left:0px !important;}";
+	echo "#".$nav." > span > button{width:5em;}";
+	$w1 = 'calc(10em + 6px);';
+	$w2 = 'calc(600px - 20em - 14px);';
+	$wk = '-webkit-';
+	$wm = '-moz-';
+	$w  = 'width:';
+	$w1 = $w.$wk.$w1.$w.$wm.$w1.$w.$w1;
+	$w2 = $w.$wk.$w2.$w.$wm.$w2.$w.$w2;
+	echo "span#".$nav."-left{text-align:left;".$w1."}";
+	echo "span#".$nav."-center{text-align:center;".$w2."}";
+	echo "span#".$nav."-right{text-align:left;".$w1."}";
 	echo "</style>";
 	echo "<span id=\"".$nav."-left\"";
 	if ($current_pos==0) echo "style=\"visibility:hidden;\" ";

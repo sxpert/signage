@@ -19,6 +19,11 @@ function db_connect () {
 	return _db_connect($DBUSER,$DBPASS);
 }
 
+function db_last_error () {
+	global $db;
+	return pg_last_error($db);
+}
+
 function db_query ($s, $p=null) {
 	global $db;
 	if ($p==null) 
@@ -55,8 +60,11 @@ function db_update ($table, $key, $fields) {
   $s = 'update '.$table.' set '.$f.' where '.$key[0].'=$'.$i.';';
   error_log($s);
   array_push($v,$key[1]);
+	error_log(print_r($v,1));
   $res = db_query($s,$v);
-  if (db_affected_rows($res)==1) return true;
+	$nb = db_affected_rows($res);
+	error_log($nb." rows updated");
+  if ($nb==1) return true;
   else return false;
 }
 

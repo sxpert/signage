@@ -133,6 +133,13 @@
 	padding-left:182pt;
 	min-height: 300pt;
     }
+    #content > div.success {
+	    margin-bottom: 3px;
+	    color: black;
+	    background-color: #88EA7C;
+	    border: 1px solid green;
+	    width: 400pt;
+    }
     #content > div.error {
 	    margin-bottom: 3px;
     }
@@ -189,6 +196,7 @@
     #content > form > div > input[disabled="true"] {
       border-color: DeepSkyBlue;
     }
+    #content > form > div > span,
     #content > form > div > button {
     	margin-left: 140pt;
     }

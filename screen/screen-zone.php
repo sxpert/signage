@@ -36,9 +36,14 @@ switch ($zone) {
       $s['delay'] = 60;
     } else {
       $feed = sign_feed_get_instance($feed_id);
-      $c = $feed->getNext($screen_id, $feed_id,$zone);
-      if (array_key_exists('delay',$c)) $s['delay'] = $c['delay'];
-      if (array_key_exists('html',$c)) $s['html'] = $c['html'];
+			if (!is_null($feed)) {
+	      $c = $feed->getNext($screen_id, $feed_id,$zone);
+      	if (array_key_exists('delay',$c)) $s['delay'] = $c['delay'];
+      	if (array_key_exists('html',$c)) $s['html'] = $c['html'];
+			} else {
+				$s['delay'] = 10;
+				$s['html'] = 'erreur a la création du flux';
+			}
     }
 }
 
