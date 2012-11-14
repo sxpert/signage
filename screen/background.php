@@ -29,20 +29,32 @@
 
 // ceci n'est qu'un exemple. aller dans la bdd pour récupérer les vraies descriptions d'écran
 
+$w = 1920;
+$h = 1080;
+// font size in pixels
+$ts = 100;
+
+
+function p($full,$value) {
+	return ($value*100/$full).'%';
+}
+
 $s = array();
 $res = array();
 $res['w'] = 1920;
 $res['h'] = 1080; 
 $s['resolution'] = $res;
 $s['backgroundColor'] = '#166CBA';
+// value of fontsize
+$s['fontsize'] = $ts/$h;
 $zones = array();
 
 $z = array();
 $z['id']='image';
-$z['x']=30;
-$z['y']=30;
-$z['w']=1920-60;
-$z['h']=920;
+$z['x']=p($w,30);
+$z['y']=p($h,30);
+$z['w']=p($w,1920-60);
+$z['h']=p($h,920);
 $Z['fontSize']='35%';
 $z['color']='blue';
 //$z['backgroundColor']='white';
@@ -50,10 +62,10 @@ array_push($zones,$z);
 
 $z = array();
 $z['id']='_clock';
-$z['x']=0;
-$z['y']=980;
-$z['w']=300;
-$z['h']=100;
+$z['x']=p($w,0);
+$z['y']=p($h,980);
+$z['w']=p($w,300);
+$z['h']=p($h,100);
 $z['fontSize']='43%';
 $z['backgroundColor']='black';
 $z['color']='white';
@@ -61,10 +73,10 @@ array_push($zones,$z);
 
 $z = array();
 $z['id']='_ticker';
-$z['x']=300;
-$z['y']=980;
-$z['w']=1920-300;
-$z['h']=100;
+$z['x']=p($w,300);
+$z['y']=p($h,980);
+$z['w']=p($w,1920-300);
+$z['h']=p($h,100);
 $z['fontSize']='80%';
 $z['backgroundColor']='black';
 $z['color']='white';

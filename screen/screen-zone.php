@@ -15,7 +15,7 @@ $s['zone'] = $zone;
 
 switch ($zone) {
   case '_clock':
-    $s['html'] = strftime('<div style="text-align:center;vertical-align:middle;height:100%;border-right:4px solid white;">%Y-%m-%d<br/>%H:%M</div>');
+    $s['js'] = '/screen/js/clock.js';
     $s['delay'] = 5;
     break;
   case '_ticker':
@@ -38,8 +38,12 @@ switch ($zone) {
       $feed = sign_feed_get_instance($feed_id);
 			if (!is_null($feed)) {
 	      $c = $feed->getNext($screen_id, $feed_id,$zone);
-      	if (array_key_exists('delay',$c)) $s['delay'] = $c['delay'];
+				$s = array_merge($s,$c);
+      	/*
+				if (array_key_exists('delay',$c)) $s['delay'] = $c['delay'];
       	if (array_key_exists('html',$c)) $s['html'] = $c['html'];
+      	if (array_key_exists('js',$c)) $s['js'] = $c['js'];
+				*/
 			} else {
 				$s['delay'] = 10;
 				$s['html'] = 'erreur a la création du flux';

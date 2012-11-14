@@ -1,6 +1,5 @@
 <?php
 $d = dirname(dirname(dirname(__file__)));
-require_once($d.'/lib/hlib.php');
 require_once($d.'/lib/signlib.php');
 
 // TODO: check for logged in user

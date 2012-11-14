@@ -1,0 +1,58 @@
+#apod{
+	position:absolute;
+	height:100%;
+	font-size:70%;
+	color:white;
+}
+#apodtitle{
+	margin-bottom:0.2em;
+}
+#nasalogocell{
+	display:table-cell;
+	vertical-align:top;
+	height:1.5em;
+	width:1.5em;
+}
+#nasalogoimg{
+	width:          1.5em;
+	height:         1.5em;
+	padding-left:   4.5pt;
+	background:     -webkit-radial-gradient(circle closest-side, white 70%, white 30%, rgba(255,255,255,0));
+}
+#apoddateinfo{
+	border-right:   1px solid white;
+	vertical-align: top;
+	width:          5.5em;
+	display:        table-cell;
+	font-size:      50%;
+	padding-right:  0.4em;
+	text-align:     right;
+}
+#apodcaption{
+	display:table-cell;
+	padding-left:0.2em;
+	width: 20em;
+}
+#apodcontents{
+	font-weight:200;
+	font-size:45%;
+	color:white;
+}
+#apodphotocell{
+	display:table-cell;
+	padding-right:0.3em;
+	vertical-align:top;
+	width:30%;
+}
+#apodphotoimg{
+	width:100%;
+}
+#apodtextcell{
+	display:table-cell;
+	-webkit-column-count:2;
+	text-align:justify;
+}
+p{
+	margin-top:0;
+	margin-bottom:0.3em;
+}

@@ -102,7 +102,7 @@ function get_next_feed_id ($screen_id) {
   db_connect();
   $res = db_query('select get_next_feed_id($1) as feed_id', array($screen_id));
   $row = db_fetch_assoc ($res);
-  eturn $row['feed_id'];
+  return $row['feed_id'];
 }
 
 /*******************************************************************************

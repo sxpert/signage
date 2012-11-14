@@ -611,30 +611,18 @@ class FeedAPOD {
     }
     $picpath = substr($fn,$len);
 
-    sign_preload_append($picpath);
-    $html = '<div id="apod'.$id.'">'.
-      '<style text="text/css" scoped>'.
-      '#apod'.$id.'{position:absolute;height:100%;font-size:70%;color:white;visibility:hidden;}'.
-      '#apodtitle'.$id.'{margin-bottom:0.2em;}'.
-      '#nasalogocell'.$id.'{display:table-cell;vertical-align:top;height:1.5em;width:1.5em;}'.
-      '#nasalogoimg'.$id.'{width:1.5em;height:1.5em;padding-left:4.5pt;background:-webkit-radial-gradient(circle closest-side, white 70%, white 30%, rgba(255,255,255,0));}'.
-      '#apoddateinfo'.$id.'{border-right:3px solid white;vertical-align:top;width:5.5em;display:table-cell;font-size:50%;padding-right:0.4em;text-align:right;}'.
-      '#apodcaption'.$id.'{display:table-cell;padding-left:0.2em;}'.
-      '#apodcontents'.$id.'{font-weight:200;font-size:45%;color:white;}'.
-      '#apodphotocell'.$id.'{display:table-cell;padding-right:0.3em;vertical-align:top;width:30%;}'.
-      '#apodphotoimg'.$id.'{width:100%;}'.
-      '#apodtextcell'.$id.'{display:table-cell;-webkit-column-count:2;text-align:justify;}'.
-      'p{margin-top:0;margin-bottom:0.3em;}'.
-      '</style>'.
-      '<div id="apodtitle'.$id.'">'.
-        '<span id="nasalogocell'.$id.'"><img id="nasalogoimg'.$id.'" src="'.$nasalogofile.'"/></span>'.
-        '<span id="apoddateinfo'.$id.'">APOD<br/>'.$date.'</span>'.
-        '<span id="apodcaption'.$id.'">'.$signinfo['caption'].'</span></div>'.
-      '<div id="apodcontents'.$id.'">'.
-        '<span id="apodphotocell'.$id.'"><img id="apodphotoimg'.$id.'" src="'.$picpath.'"/></span>'.
-        '<span id="apodtextcell'.$id.'"><p>'.implode("</p>\n<p>",explode("\n",$signinfo['detail'])).'</p></span>'.
-      '</div></div>';
-    $resp = array('html'=>$html,'delay'=>60);
+		// generate the array that will be sent with all the info
+		// lauches a client side javascript to generate the content 
+		$apod = array(
+			'date'=>$date,
+			'style'=>'/lib/feeds/apod.css',
+			'caption'=>$signinfo['caption'],
+			'picture'=>$picpath,
+			'text'=>(explode("\n",$signinfo['detail'])));
+    $resp = array(
+			'apod'=>$apod,
+			'js'=>'/lib/feeds/apod.js',
+			'delay'=>60);
     return $resp;
   }
 

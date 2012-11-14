@@ -89,7 +89,16 @@ else
 hlib_form_end ($form);
 
 if ($screen['adopted']=='t') {
-  echo "<hr/>\n";
+
+	// screen simulation
+	$w = 500;
+	$h = floor(($w*9)/16);
+	echo "<iframe src=\"/screen/index.php?screenid=".$screen['id']."\" ".
+			 "style=\"border:1px solid black;width:".$w."px;height:".$h."px;\"".
+		   "></iframe>\n";
+
+
+	echo "<hr/>\n";
 /* 
  * afficher les feeds
  */
@@ -130,7 +139,8 @@ if ($screen['adopted']=='t') {
   }
   $feeds['header'] = $headers;
   $feeds['data'] = $data;
-  
+
+
 	echo "<h3>Liste des flux</h3>\n";
 	$form = hlib_form('post','screen-details.php',$errors, array('id'=>'feeds'));
   hlib_form_hidden($form, 'id', $screen['id']);

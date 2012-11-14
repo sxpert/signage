@@ -1,14 +1,37 @@
-function createLoadIndicator() {
-  var div = document.createElement('DIV');
-  div.id='loading';
-  div.style.position='absolute';
-  div.style.top = 3;
-  div.style.left = 1903;
-  div.style.width = 14;
-  div.style.height = 14;
-  div.style.backgroundColor = 'red';
-  div.style.borderRadius = 7;
-  return div;
+var bgdata = null;
+
+function loadCss(css) {
+	var l = document.getElementsByTagName('link');
+	for (var i=0;i<l.length;i++) {
+		var rel = l[i].getAttribute('rel');
+		var href = l[i].getAttribute('href');
+		if ((rel=='stylesheet')&&(href==css)) {
+			l = null;
+			rel = null;
+			href = null;
+			return;
+		}
+		rel = null;
+		href = null;
+	}
+	l = null;
+
+	l = document.createElement('link');
+	l.setAttribute('rel','stylesheet');
+	l.setAttribute('type','text/css');
+	l.setAttribute('href',css);
+	var h = document.getElementsByTagName('head');
+	if (h.length!=1) {
+		console.error('there should be only one <head> element !');
+		console.error(h);
+		l = null;
+		h = null;
+		return;
+	}
+	h = h[0];
+	h.appendChild(l);
+	h = null;
+	l = null;
 }
 
 function createZone (zone) {
@@ -22,34 +45,36 @@ function createZone (zone) {
   div.style.color = zone.color;
   div.style.backgroundColor = zone.backgroundColor;
   div.style.fontSize = zone.fontSize;
+	div.style.lineHeight = 1.2;
   div.style.overflow = 'hidden';
   return div;
 }
 
 function updateZone(data) {
-  if (data.html) {
+  if (data.html||data.js) {
     var z = document.getElementById(data.zone);
-    var td = document.createElement('DIV');
-    td.innerHTML = data.html;
-    var d = td.removeChild(td.firstChild);
-    td = null;
-    if (z.hasChildNodes()) {
-      var old = z.replaceChild(d, z.firstChild);
-      old = null;
-    } else
-      z.appendChild(d);
-    // make first child visible
-    z.firstChild.style.visibility='visible';
-    d = null;
-    z = null;
-    try {
-      window.gc();
-    } catch (e) {
-      // do nothing
-    }
+		if (data.js) {
+			$.ajax({
+				url: data.js,
+				dataType: 'script',
+				cache: false,
+				success: function() {
+					// start the plugin furnished js
+					plugin(data);
+		 		},
+				error: function(jqHXR, textStatus, errorThrown) {
+					console.log(textStatus);
+					console.log(errorThrown);
+				}
+			});
+		} else {
+			z.innerHTML = data.html;
+			z.firstChild.style.visibility='visible';
+		}
     return true;
   }
   console.log ('nothing to update');
+	console.log (data);
   return false;
 }
 
@@ -100,7 +125,9 @@ function createBackgroundZones(data) {
   $b.css('background-color',data.backgroundColor);
   $b.css('margin', '0');
   $b.css('font-family', 'Ubuntu');
-  $b.css('font-size', '100px');
+	// calculate font-size according to actuel height of screen
+	var fontsize = (window.innerHeight*data.fontsize)+'px';
+  $b.css('font-size', fontsize);
   $b.css('width', data.resolution.width);  
   $b.css('height', data.resolution.height);
   $b.css('overflow', 'hidden');
@@ -121,6 +148,7 @@ function reloadBackground() {
     datatype: 'json',
     success: function(data,textstatus,jqXHR) {
       // data is my json object
+			bgdata = data;
       createBackgroundZones(data);
       //updateScreenInfo();
     },
