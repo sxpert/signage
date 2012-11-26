@@ -98,7 +98,7 @@ function get_screen_id ($ip_addr) {
   return $row['id'];
 }
 
-function get_next_feed_id ($screen_id) {
+function get_next_feed_id ($screen_id, $simul) {
   db_connect();
   $res = db_query('select get_next_feed_id($1) as feed_id', array($screen_id));
   $row = db_fetch_assoc ($res);
@@ -184,9 +184,9 @@ function sign_feed_number_items ($feed_id) {
 function sign_add_feed_entry ($feed_id, $date, $title, $image, $detail,$active=false) {
   db_connect();
 
-  $res = db_query('insert into feed_contents (id_feed, date, title, image, detail,active) '.
+  $res = db_query('insert into feed_contents (id_feed, date, title, image, detail, active) '.
 		'values ($1,$2,$3,$4,$5,$6) returning id;',
-	  array($feed_id, $date, $title, $image, $detail,$active));
+	  array($feed_id, $date, $title, $image, $detail,($active?'t':'f')));
 	if ($res===false) return false;
 	if (db_affected_rows($res)!=1) return false;
 	$r = db_fetch_assoc($res);
@@ -279,6 +279,41 @@ function sign_feed_get_next ($screenid, $feedid) {
   if ($feedinfo['id']===null) $feedinfo=null;
   //error_log('sign_feed_get_next : '.print_r($feedinfo, 1));
   return $feedinfo;
+}
+
+// feed class
+class SignFeed {
+	private $id;
+
+	public function __construct($id) {
+		db_connect();
+		if (is_integer($id)) {
+			// we have the id of the feed
+			$this->id = $id;
+		}
+	}
+
+	/****
+	 * returns boolean
+	 */
+	public function hasItem($item) {
+		$sql = null;
+		if (is_object($item)) {
+			if ($item instanceof DateTime) {
+				$sql = 'select * from feed_contents where id_feed=$1 and date=$2;';
+				$d = $item->format('Y-m-d H:i:s');
+				$arr = array($this->id, $d);
+			}
+		}
+		if (!is_null($sql)) {
+			$res = db_query($sql, $arr);
+			if ($res!==false) {
+				$nb = db_num_rows($res);
+				if ($nb==1) return true;
+			}
+		}
+		return false;
+	}
 }
 
 ?>

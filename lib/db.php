@@ -28,7 +28,14 @@ function db_query ($s, $p=null) {
 	global $db;
 	if ($p==null) 
 		$p = array();
-	return pg_query_params ($db, $s, $p);
+	
+	try {
+		$r = pg_query_params ($db, $s, $p);
+	} catch (Exception $e) {
+		error_log($e->getMessage());
+		error_log(print_r(debug_backtrace(),1));
+	}
+	return $r;
 }
 
 function db_num_rows ($r) {

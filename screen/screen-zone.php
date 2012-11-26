@@ -24,10 +24,10 @@ switch ($zone) {
     break;
   default:
     // get the screen id
-    $screen_id = get_screen_id (get_remote_ip ());
+	  $screen_id = get_screen_id (get_remote_ip ());
     // get the next feed id
     // TODO: take the target into account !
-    $feed_id = get_next_feed_id ($screen_id);
+    $feed_id = get_next_feed_id ($screen_id,false);
     //$feed_id = null;
     if ($feed_id==null) {
       // default error message
@@ -37,13 +37,8 @@ switch ($zone) {
     } else {
       $feed = sign_feed_get_instance($feed_id);
 			if (!is_null($feed)) {
-	      $c = $feed->getNext($screen_id, $feed_id,$zone);
+	      $c = $feed->getNext($screen_id, $feed_id, $zone);
 				$s = array_merge($s,$c);
-      	/*
-				if (array_key_exists('delay',$c)) $s['delay'] = $c['delay'];
-      	if (array_key_exists('html',$c)) $s['html'] = $c['html'];
-      	if (array_key_exists('js',$c)) $s['js'] = $c['js'];
-				*/
 			} else {
 				$s['delay'] = 10;
 				$s['html'] = 'erreur a la création du flux';

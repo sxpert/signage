@@ -230,25 +230,24 @@ class FeedAPOD {
     // java applet from hell ?
     $applet = $doc->getElementsByTagName('applet');
     if ($applet->length==1) {
+			error_log('Applet, nothing to see here');
       return null;
     }
     // stupid object for microsoft video feed ?
     $object = $doc->getElementsByTagName('object');
     if ($object->length>0) {
+			error_log('Object, nothing to see here');
       return null;
     }
     // gah, worse, could be flash ;-)
     $embed = $doc->getElementsByTagName('embed');
     if ($embed->length>0) {
-      return null;
-    }
-    // could it be some crazy javascript ?
-    $script = $doc->getElementsByTagName('script');
-    if ($script->length>0) {
+			error_log('Embed, nothing to see here');
       return null;
     }
     // get image url
     $links = $doc->getElementsByTagName('a');
+		var_dump($links);
     /* finds which one contains an img tag */
     $img = null;
     $valid = [];
@@ -256,41 +255,111 @@ class FeedAPOD {
       $item = $links->item($i);
       $t = $item->getElementsByTagName('img');
       if ($t->length==1){
-	/* look for the one with an 'alt' */
-	$image = $t->item(0);
-	if ($image->attributes->getNamedItem('alt')!=null) 
-	  array_push($valid, $item->getAttribute('href'));
-      }
-    }
-    if (count($valid)>0) {
+				/* look for the one with an 'alt' */
+				$image = $t->item(0);
+				if ($image->attributes->getNamedItem('alt')!=null) {
+					array_push($valid, $item->getAttribute('href'));
+					array_push($valid, $image->attributes->getNamedItem('src')->textContent);
+				}
+     	}
+	  }
+  	if (count($valid)>0) {
       /* find the local one */
-      foreach ($valid as $url) {
-	$u = parse_url($url);
-	if (array_key_exists('scheme',$u))
-	  continue;
-	if (array_key_exists('host',$u))
-	  continue;
-	$img = $u['path'];
-      }
-    }
+			$img = array();
+    	foreach ($valid as $url) {
+				var_dump($url);
+			  $u = parse_url($url);
+				if (array_key_exists('scheme',$u))
+				  continue;
+				if (array_key_exists('host',$u))
+				  continue;
+				array_push($img,$u['path']);
+     	}
+			if (count($img)==0)
+				$img=null;
+   	}
     if ($img==null) {
-      $images = $doc->getElementsByTagName('img');
-      if ($images->length==1)
-	$img = $images->item(0)->getAttribute('src');
+ 	    $images = $doc->getElementsByTagName('img');
+   	  if ($images->length==1)
+				$img = $images->item(0)->getAttribute('src');
     }
-    if ($img != null) 
-      return $this->urlbase.'/'.$img;
+ 	  if ($img != null) {
+			if (!is_array($img))
+	   	  return $this->urlbase.'/'.$img;
+			$im = array();
+			foreach($img as $i)
+				array_push($im,$this->urlbase.'/'.$i);
+			return $im;
+		}
+    // could it be some crazy javascript ?
+    $script = $doc->getElementsByTagName('script');
+    if ($script->length>0) {
+			error_log('Script, nothing to see here');
+      return null;
+    }
     $this->dumpDomList($doc,$images);
-    echo "UNABLE TO FIND IMAGE\n";
-    $this->dumpDom($doc);
+ 	  echo "UNABLE TO FIND IMAGE\n";
+   	$this->dumpDom($doc);
     exit(0);
-  }
+ 	}
   
   /*****************************************************************************
    *
    * Fonction de récupération du contenu
    *
    */
+	
+	/****
+	 *
+	 * Get the info about the feed from the database (in particular the URL)
+	 *
+	 */
+	private function getFeedInfo() {
+    $db = db_connect();
+    if ($db==null) {
+      echo "major problem, unable to connect to the database\n";
+      return;
+    }
+    echo "connected to the database\n";
+    $res = db_query('select f.id, f.url from feeds as f, feed_types ft where f.id_type=ft.id and ft.name=\'apod\';');
+    if ($res==false) {
+      echo "major problem, unable to find url for APOD feed\n";
+      return;
+    }
+    if (db_num_rows($res)!=1) {
+      echo "major problem, multiple feeds with apod type\n";
+      return;
+    }
+    $this->feedinfo = db_fetch_assoc($res);
+		$this->feedinfo['id'] = intval($this->feedinfo['id']);
+    $u = parse_url($this->feedinfo['url']);
+    $u['path'] = dirname($u['path']);
+    $this->urlbase = unparse_url($u);
+  }
+
+	
+	/****
+	 *
+	 * get the item date from the file name
+	 *
+	 */
+	private function getDate($fname) {
+	  $y = substr($fname,2,2);
+	  $m = substr($fname,4,2);
+	  $d = substr($fname,6,2);
+	  if ($y[0]=='9') 
+	    $y = '19'.$y;
+	  else
+	    $y = '20'.$y;
+	  $date = $y.'-'.$m.'-'.$d;
+		return $date;
+	}
+
+	private function getImageDir($date) {
+		$s = substr($date,0,7);
+		$s[4]='/';
+		return $s;
+	}
 
   /*****
    * 
@@ -321,43 +390,47 @@ class FeedAPOD {
 	      //
 	      $img = $this->findImage($doc);
 	      echo ">>>>> img\n";
-	      echo $img."\n";
 	
 	      if ($img!=null) {
+					// img can be an array of urls with the first one preferred
 	        //get date from url
 	        $uhtml = parse_url($url);
 	        $pathhtml = $uhtml['path'];
-	        $filehtml = basename($pathhtml);
-          $uimg = parse_url($img);
-          $pathimg = $uimg['path'];
-          $fileimg = basename($pathimg);
-          // ckeck extension
-          $extension = pathinfo($pathimg,PATHINFO_EXTENSION);
-          // TODO: look for a ? in the url...
-          error_log('imagefile is '.$pathimg.' file extension is '.$extension);
-          $idx = array_search($extension,array('jpg','gif','png'));
-          error_log('idx='.print_r($idx,1));
-          if ($idx!==false) {
-	          $install = get_install_path();
-	          $y = substr($filehtml,2,2);
-	          $m = substr($filehtml,4,2);
-	          $d = substr($filehtml,6,2);
-	          if ($y[0]=='9') 
-	            $y = '19'.$y;
-	          else
-	            $y = '20'.$y;
-	          $date = $y.'-'.$m.'-'.$d;
-	          $apodcache = $install."/cache/images/apod/".$y.'/'.$m.'/';
-	          make_webserver_dir ($apodcache);
+	        $filehtml = basename($pathhtml); 
+					$date = $this->getDate($filehtml);
 
-	          if (($uimg['scheme']=='http')&&($uimg['host']=='apod.nasa.gov')) {
-	            $fname = $apodcache.$d.'--'.basename($img);
-	            if (cache_url_to_file ($img, $fname))
-	              $img = $fname;
-	            else
-	              $img=null;
-	          }
-          } else $img=null;
+					// handle storing the picture locally
+					error_log('caching images');
+					var_dump($img);
+					foreach ($img as $i) {
+	          $uimg = parse_url($i);
+  	        $pathimg = $uimg['path'];
+    	      $fileimg = basename($pathimg);
+      	    // ckeck extension
+        	  $extension = pathinfo($pathimg,PATHINFO_EXTENSION);
+          	// TODO: look for a ? in the url...
+ 	 	 	    	error_log('imagefile is '.$pathimg.' file extension is '.$extension);
+          	$idx = array_search($extension,array('jpg','gif','png','tif'));
+          	error_log('idx='.print_r($idx,1));
+          	if ($idx!==false) {
+	        	  $install = get_install_path();
+	       		  $apodcache = $install."/cache/images/apod/".$this->getImageDir($date).'/';
+	        	  make_webserver_dir ($apodcache);
+
+	        	  if (($uimg['scheme']=='http')&&($uimg['host']=='apod.nasa.gov')) {
+	        	    $fname = $apodcache.substr($date,8,2).'-'.basename($i);
+	        	    if (cache_url_to_file ($i, $fname)) {
+	      					echo $i."\n";
+	        	      $i = $fname;
+	        	    } else
+	        	      $i=null;
+	        	  }
+          	} else $i=null;
+						if (!is_null($i)) {
+							$img = $i;
+							break;
+						}
+					}
 	        // push this new item in the database
 	        if ($img!=null)
 	          sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
@@ -379,63 +452,73 @@ class FeedAPOD {
     $this->getApod($url);
   }
 
+	private function getApodList($url) {
+		$f = fopen($url, 'r');
+		$d = '';
+		while (!feof($f))
+			$d.=fread($f,4096);
+		fclose($f);
+
+		$l = array();
+		$doc = new DomDocument();
+		if (@$doc->loadHTML($d)) {
+			$b = $doc->getElementsByTagName('b')->item(0);
+			$links = $b->getElementsByTagName('a');
+      for ($i=($links->length-1);$i>0;$i--) {
+				$link = $links->item($i);
+				$href = $link->getAttribute('href');
+				array_push($l,$href);
+			}
+		}
+		return $l;
+	}
+
   /****
    *
    * Récupère l'intégralité des entrées de l'APOD depuis un certain fichier
    * si $from est null, commence au début
    */
   private function getApodFromStart ($url,$from=null) {
-    $f = fopen($url, 'r');
-    $d = '';
-    while (!feof($f))
-      $d.=fread($f, 4096);
-    fclose($f);
-    
-    $doc = new DomDocument();
-    if (@$doc->loadHTML($d)) {
-      $b = $doc->getElementsByTagName('b')->item(0);
-      $links = $b->getElementsByTagName('a');
-      for ($i=($links->length-1);$i>0;$i--) {
-	$link = $links->item($i);
-	$href = $link->getAttribute('href');
-	if ($from!=null) {
-	  if ($from==$href)
-	    $from=null;
-	} 
-	if ($from==null) {
-	  $url = $this->urlbase."/".$href;
-	  $this->getApod($url);
-	}
-      }
-    }
+   	$l = $this->getApodList($url);
+
+		foreach($l as $item) {
+			if ($from!=null) {
+	  		if ($from==$item)
+	    		$from=null;
+			} 
+			if ($from==null) {
+	  		$url = $this->urlbase."/".$item;
+	  		$this->getApod($url);
+			}
+		}
   }
+
+	/****
+	 *
+	 * Identifie et corrige les bouts d'apod qui manquent
+	 *
+	 */
+	public function fixMissing () {
+		$this->getFeedInfo();
+		$l = $this->getApodList($this->feedinfo['url']);
+		$feed = new SignFeed($this->feedinfo['id']);
+		foreach ($l as $item) {
+			$d = DateTime::createFromFormat('Y-m-d H:i:s',$this->getDate($item).' 00:00:00');
+			if (!$feed->hasItem($d)) {
+    		$url = $this->urlbase.'/'.$item;
+				error_log($url);
+		    $this->getApod($url);
+			}		
+		}
+	}
 
   /*****************************************************************************
    *
    * Mise à jour de l'APOD
    *
    */
-
-  public function update () {
-    $db = db_connect();
-    if ($db==null) {
-      echo "major problem, unable to connect to the database\n";
-      return;
-    }
-    echo "connected to the database\n";
-    $res = db_query('select f.id, f.url from feeds as f, feed_types ft where f.id_type=ft.id and ft.name=\'apod\';');
-    if ($res==false) {
-      echo "major problem, unable to find url for APOD feed\n";
-      return;
-    }
-    if (db_num_rows($res)!=1) {
-      echo "major problem, multiple feeds with apod type\n";
-      return;
-    }
-    $this->feedinfo = db_fetch_assoc($res);
-    $u = parse_url($this->feedinfo['url']);
-    $u['path'] = dirname($u['path']);
-    $this->urlbase = unparse_url($u);
+	public function update () {
+		$this->getFeedInfo();
 	
     // find the highest date for this stream
     echo "finding if we have stuff in contents\n";
@@ -450,10 +533,9 @@ class FeedAPOD {
       $oneday = new DateInterval('P1D');
       $cd = (new DateTime($row['date']))->add($oneday);
       while ($cd < $today) {
-	$cd->add($oneday);
-	$this->getApodByDate($cd);
+				$cd->add($oneday);
+				$this->getApodByDate($cd);
       }
-			
     } else {
       // not found anything	
       // obtain the contents of the apod archive file
@@ -554,6 +636,42 @@ class FeedAPOD {
 		return $fn;
 	}
 
+	private function resizeTiff ($fn) {
+    // précalcul du nom de fichier
+    $dir = dirname($fn);
+    $fname = basename($fn);
+    $ext = pathinfo($fname,PATHINFO_EXTENSION);
+	 	
+		// we have a tiff picture. transform to png
+		error_log('FeedAPOD::resizeTiff->PNG : '.$fname);
+		$img = new Imagick($fn);
+		$img->writeImage($dir.'/'.$fname.'.png');
+
+		$dim = $img->getImageGeometry();
+		$width = $dim['width'];
+		$height = $dim['height'];
+
+		// this is not an animated gif
+		if ($width>(1920/3)) {
+     	$nwidth = round(1920/3);
+     	$nheight = round($nwidth*$height/$width);
+			error_log('FeedAPOD::resizeTiff->PNG : '.$fname.' '.$width.' x '.$height.' => '.$nwidth.' x '.$nheight);
+			// replaces the gif file with a png
+			$nfn = $dir.'/'.substr($fname,0,2).'-w'.$nwidth.'.png';
+			if ($img->resizeImage($nwidth,$nheight,imagick::FILTER_LANCZOS,1)) {
+       	if ($img->writeImage($nfn)) {
+         	$img->destroy();
+         	@chmod ($nfn, 0664);
+  				@chgrp ($nfn, 'www-data');        
+         	return $nfn;
+       	} else 
+         	error_log ('une erreur s\'est produite lors de la sauvegarde de l\'image');
+     	} else 
+       	error_log('une erreur s\'est produite lors du redimensionnement');
+		}
+		return $fn;
+	}
+
   private function updateImage ($fn) {
 		$finfo = finfo_open(FILEINFO_MIME_TYPE);
 		$fmime = finfo_file($finfo,$fn);
@@ -561,11 +679,16 @@ class FeedAPOD {
 		
 		$nfn=$fn;
 		switch ($fmime) {
+			case 'image/png':
+				break;
 			case 'image/jpeg':
 				$nfn = $this->resizeJPEG($fn);		
 				break;
 			case 'image/gif':
 				$nfn = $this->resizeGIF($fn);
+				break;
+			case 'image/tiff':
+				$nfn = $this->resizeTiff($fn);
 				break;
 			default:
 				error_log('unknown mime-type : '.$fmime);
@@ -620,6 +743,8 @@ class FeedAPOD {
 			'picture'=>$picpath,
 			'text'=>(explode("\n",$signinfo['detail'])));
     $resp = array(
+			'feedid'=>$feedid,
+			'item'=>$signinfo['id'],
 			'apod'=>$apod,
 			'js'=>'/lib/feeds/apod.js',
 			'delay'=>60);
@@ -637,6 +762,10 @@ if (getenv('TERM')) {
           $f = new FeedAPOD();
           $f->updatePics();
           break;
+				case '--fix-missing':
+					$f = new FeedAPOD();
+					$f->fixMissing();
+					break;
       }
       break;
     default:

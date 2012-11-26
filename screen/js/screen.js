@@ -1,4 +1,13 @@
+// données des zones
 var bgdata = null;
+// arguments de la page
+var args = null;
+// est on en train de simuler un autre écran
+var simulate = false;
+// le feed courant
+var currfeed = null;
+// les positions actuels dans les feeds
+var feeds = {};
 
 function loadCss(css) {
 	var l = document.getElementsByTagName('link');
@@ -78,6 +87,7 @@ function updateZone(data) {
   return false;
 }
 
+
 function refreshZone(zone) {
   function restart () {
     console.log('erreur pendant la requete ajax, restarting');
@@ -85,31 +95,53 @@ function refreshZone(zone) {
       refreshZone(zone);
     },1000);
   }
-  $.ajax({
-    url: 'screen-zone.php?zone='+zone.id,
-    type: 'GET',
-    cache: false,
-    datatype: 'json',
-    success: function(data, textstatus, jqXHR) {
-      var updated = updateZone (data);
-      textstatus = null;
-      jqXHR = null;
-      if (updated) {
-        // sets up the timer
-        var delay = 10000;
-        // delay in the json is expressed in seconds
-        if (data.delay) delay = data.delay*1000;
-        window.setTimeout(function() {
-          refreshZone(zone);
-        }, delay);
-        delay = null;
-      }
-      updated = null;
-      data = null;
-    },
-    error: restart,
-    timeout: restart
-  });
+	function fetchData (url) {
+	  $.ajax({
+  	  url: url,
+    	type: 'GET',
+	    cache: false,
+			datatype: 'json',
+	    success: function(data, textstatus, jqXHR) {
+	
+	      var updated = updateZone (data);
+	      textstatus = null;
+	      jqXHR = null;
+	      if (updated) {
+	        // sets up the timer
+	        var delay = 10000;
+	        // delay in the json is expressed in seconds
+	        if (data.delay) delay = data.delay*1000;
+	        window.setTimeout(function() {
+	          refreshZone(zone);
+	        }, delay);
+	        delay = null;
+	      }
+	      updated = null;
+	      data = null;
+	    },
+	    error: restart,
+	    timeout: restart
+	  });
+	}
+
+	function callRefresh(zone, callback) {
+		if (simulate) {
+			// récupere les flux
+			$.ajax({
+					url: 'screen-get-feeds.php?screenid='+args['screenid'],
+					type: 'GET',
+					cache: false,
+					datatype: 'json',
+					success: function(data, textstatus, jqXHR) {
+						
+	
+					}
+				});
+		} else {
+			callback('screen-zone.php?zone='+zone.id);
+		}
+	}
+	callRefresh(zone, fetchData);
 }
 
 function zoneClosure (zone) {
@@ -139,10 +171,17 @@ function createBackgroundZones(data) {
   }
 }
 
+function makeBackgroundUrl () {
+	var url = '';
+	url += 'background.php';
+	
+	return url;
+}
 
 function reloadBackground() {
+	var url = makeBackgroundUrl();
   $.ajax({
-    url: 'background.php',
+    url: url,
     type: 'GET',
     cache: false,
     datatype: 'json',
@@ -161,7 +200,26 @@ function reloadBackground() {
   });
 }
 
+function parseArgs() {
+	var args = document.location.search.substring(1).split('&');
+	var argsparsed = {};
+	for (i=0;i<args.length;i++) {
+		var a = decodeURIComponent(args[i]);
+		p = a.indexOf('=');
+		if (p==-1) {
+			argsparsed[a.trim()] = true;
+		} else {
+			argsparsed[a.substring(0,p).trim()] = a.substring(p+1);
+		}
+	}
+	return argsparsed;
+}
+
 $(document).ready(function() {
+	args = parseArgs();
+	if (args['screenid'] !== undefined) {
+		simulate = true;
+	}
   reloadBackground();
 });
 

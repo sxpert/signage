@@ -399,49 +399,84 @@ do $$
       -- function to get the next feed_content
       -- TODO: handle more of the available options
       --
-      create or replace function get_next_feed_content (l_screen_id bigint, l_feed_id bigint) returns record as $q$
+
+			-- 
+			-- function to get the first item in the feed
+			-- 
+			create or replace function feed_get_first_item_id (l_feed_id bigint) returns bigint as $q$
+				declare
+					t_next bigint;
+				begin
+          select id into t_next from feed_contents 
+						where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
+									and id_feed = l_feed_id ;
+            if not found then
+              return null;
+            end if;
+						return t_next;
+				end;
+			$q$ language plpgsql;
+
+			--
+			-- function to get the last item in the feed
+			--
+			create or replace function feed_get_next_item_id (l_feed_id bigint, l_item_id bigint) returns bigint as $q$
+				declare
+					t_next bigint;
+				begin
+         	select id into t_next from feed_contents 
+						where id_feed = l_feed_id and date > (select date from feed_contents where id = l_item_id)
+							    and active = true order by date limit 1;
+         	if not found then
+						t_next := feed_get_first_item_id (l_feed_id);
+         	end if;
+					return t_next;
+				end;
+			$q$ language plpgsql;
+
+			--
+			-- function to get the contents of a feed item
+			--
+			create or replace function feed_get_item (l_screen_id bigint, l_feed_id bigint, l_item_id bigint) returns record as $q$
+				declare
+					t_target  text;
+					t_content record;
+				begin
+					select target into t_target from screen_feeds where id_screen=l_screen_id and id_feed=l_feed_id;
+					select *, t_target as target into t_content from feed_contents where id=l_item_id;
+					return t_content;
+				end;
+			$q$ language plpgsql;
+
+			--
+			-- function to get the contents of the next feed item
+			--
+			create or replace function get_next_feed_content (l_screen_id bigint, l_feed_id bigint) returns record as $q$
         declare
-          t_feed            record;
-          t_next_content_id bigint;
-          t_content_target  text;
-          t_next_content    record;
+          t_current bigint;
+          t_next		bigint;
+					t_content	record;
         begin
-          t_next_content_id := null;
+          t_next := null;
           -- get the current item and target
-          select current_item as item, target into t_feed from screen_feeds 
-						where id_screen = l_screen_id and id_feed = l_feed_id 
-						for update;
+          select current_item into t_current from screen_feeds where id_screen = l_screen_id and id_feed = l_feed_id for update;
           if not found then
             return null;
           end if;
 					-- there is no item yet
-          if t_feed.item is null then
+          if t_current is null then
             -- find the first item from the feed by date
-            select id into t_next_content_id from feed_contents 
-							where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
-										and id_feed = l_feed_id ;
-            if not found then
-              return null;
-            end if;
+						t_next := feed_get_first_item_id (l_feed_id);
           else
-						-- we had something already, find the next one
-						-- select  id from feed_contents where id_feed = 5 and date > (select date from feed_contents where id= 6590) and active= true order by date;
-          	select  id into t_next_content_id from feed_contents 
-							where id_feed = l_feed_id and date > (select date from feed_contents where id = t_feed.item)
-								    and active = true order by date limit 1;
-          	if not found then
-            	select id into t_next_content_id from feed_contents 
-								where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
-									  	and id_feed = l_feed_id ;
-            	if not found then
-              	return null;
-            	end if;
-          	end if;
+						t_next := feed_get_next_item_id (l_feed_id, t_current);
 					end if;
           -- update the feed_content_id
-          update screen_feeds set current_item = t_next_content_id where id_screen = l_screen_id and id_feed = l_feed_id;
-          select *, t_feed.target as target into t_next_content from feed_contents where id = t_next_content_id;
-          return t_next_content;
+					if t_next is not null then
+	          update screen_feeds set current_item = t_next where id_screen = l_screen_id and id_feed = l_feed_id;
+    	      t_content := feed_get_item(l_screen_id, l_feed_id, t_next);
+						return t_content;
+					end if;
+					return null;
         end;
       $q$ language plpgsql;
 
