@@ -54,10 +54,94 @@ function sign_preload_list () {
 }
 
 /******************************************************************************
+ * 
+ * feed list object
+ */
+
+class FeedList implements Iterator {
+	private $screenid;
+	private $current;
+
+	public function __construct($screenid) {
+		if (!is_integer($screenid)) return;
+		db_connect();
+		// check if screen exists
+		$sql = 'select id from screens where id=$1';
+		$res = db_query($sql, array($screenid));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) return;
+		$this->screenid = $screenid;
+		$this->current = null;
+	}
+
+	function rewind() {
+		$sql = 'select min(feed_order) as first from screen_feeds where id_screen=$1';
+		$res = db_query($sql, array($this->screenid));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) {
+			$this->current = null;
+			return;
+		}
+		$r = db_fetch_assoc($res);
+		$this->current = intval($r['first']);
+	}
+
+	function current() {
+		if (is_null($this->current)) return null;
+		$sql = 'select id_feed from screen_feeds where id_screen=$1 and feed_order=$2';
+		$res = db_query($sql, array($this->screenid,$this->current));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) return null;
+		$r = db_fetch_assoc($res);
+		return new Feed(array('screen'=>intval($this->screenid), 'feed'=>intval($r['id_feed'])));
+	}
+
+	function key(){
+		return $this->current;
+	}
+
+	function next() {
+		if (is_null($this->current)) return;
+		$sql = 'select feed_order from screen_feeds where id_screen=$1 and feed_order>$2 limit 1';
+		$res = db_query($sql, array($this->screenid,$this->current));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) {
+			$this->current = null;
+			return;
+		}
+		$r = db_fetch_assoc($res);
+		$this->current=intval($r['feed_order']);
+	}
+
+	function valid() {
+		if (is_null($this->current)) return false;
+		$sql = 'select feed_order from screen_feeds where id_screen=$1 and feed_order=$2';
+		$res = db_query($sql, array($this->screenid, $this->current));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) return false;
+		return true;
+	}
+}
+	
+/******************************************************************************
  *
  * Gestion des écrans
  *
  */
+
+class Screen {
+	private $id;
+	
+	public function __construct($id) {
+		if (!is_integer($id)) return;
+		db_connect();
+		// check if screen exists
+		$sql = 'select id from screens where id=$1';
+		$res = db_query($sql, array($id));
+		if (is_bool($res)&&($res==false)) return;
+		if (db_num_rows($res)!=1) return;
+		$this->id = intval($id);
+	}
+
+	public function feeds () {
+		return new FeedList ($this->id);
+	}
+}
 
 function sign_screen_exists ($screen_id, $bomb=false) {
   db_connect();
@@ -282,18 +366,48 @@ function sign_feed_get_next ($screenid, $feedid) {
 }
 
 // feed class
-class SignFeed {
-	private $id;
+class Feed {
+	private $screen;
+	private $feed;
+	private $target;
 
 	public function __construct($id) {
+		$this->screen = null;
+		$this->feed = null;
 		db_connect();
 		if (is_integer($id)) {
 			// we have the id of the feed
-			$this->id = $id;
+			$this->feed = $id;
+		} elseif (is_array($id)) {
+			if (array_key_exists('screen', $id)) $this->screen = intval($id['screen']);
+			if (array_key_exists('feed', $id)) $this->feed = intval($id['feed']);
+		}	
+	}
+
+	private function _getTarget() {
+		if (($this->screen!==null)&&($this->feed!==null)) {
+			$sql = 'select target from screen_feeds where id_screen=$1 and id_feed=$2';
+			$res = db_query($sql,array($this->screen, $this->feed));
+			if ((is_bool($res)&&($res===false))||(db_num_rows($res)!=1)) return null;
+			$r = db_fetch_assoc($res);
+			return $r['target'];
+		}
+		return null;
+	}
+
+	public function __get ($name) {
+		switch ($name) {
+			case 'id':
+			case 'feed': return $this->feed;
+			case 'target': return $this->_getTarget();
+			default: return;
 		}
 	}
 
 	/****
+	 * inidicates if item with identifier $item belongs to the feed
+	 * item can be
+	 * * the feed item date/time
 	 * returns boolean
 	 */
 	public function hasItem($item) {
@@ -302,7 +416,7 @@ class SignFeed {
 			if ($item instanceof DateTime) {
 				$sql = 'select * from feed_contents where id_feed=$1 and date=$2;';
 				$d = $item->format('Y-m-d H:i:s');
-				$arr = array($this->id, $d);
+				$arr = array($this->feed, $d);
 			}
 		}
 		if (!is_null($sql)) {
@@ -313,6 +427,60 @@ class SignFeed {
 			}
 		}
 		return false;
+	}
+
+	/**** 
+	 * Gets the first item identifier for the feed
+	 */
+	public function getFirstItem() {
+		$sql = 'select feed_get_first_item_id($1) as first';
+		$res = db_query($sql, array($this->feed));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) return null;
+		$r = db_fetch_assoc($res);
+		return intval($r['first']);
+	}
+
+	public function getNextItem($itemid) {
+		$sql = 'select feed_get_next_item_id($1, $2) as next';
+		$res = db_query($sql, array($this->feed, $itemid));
+		if ((is_bool($res)&&($res==false))||(db_num_rows($res)!=1)) return null;
+		$r = db_fetch_assoc($res);
+		return intval($r['next']);
+	}
+
+	private function getInstance() {
+  	// récupérer la description du type de flux
+  	db_connect();
+  	$res = db_query('select php_script, php_class from feed_types as ft, feeds as f where ft.id=f.id_type and f.id=$1',
+			  array($this->feed));
+  	// on a rien trouvé ?!
+  	if ($res===false) return null;
+  	// on a pas exactement une ligne (WTF ?)
+  	if (db_num_rows($res)!=1) return null;
+  	$feedinfo = db_fetch_assoc($res);
+  	putenv("SIGNLIBLOADER=true");
+		$phpscript = dirname(dirname(__file__)).$feedinfo['php_script'];
+		if (!is_readable($phpscript)) return null;
+  	require_once ($phpscript);
+  	$instance = new $feedinfo['php_class']();
+  	return $instance;
+	}
+
+	public function getItem ($itemid) {
+		$f = $this->getInstance();
+		if (is_null($f)) return null;
+		
+  	$sql = 'select * from feed_get_item($1, $2, $3) as ('.
+   		     'id bigint, feed_id bigint, ts timestamp, caption text, '.
+      	   'image text, detail text, active boolean, target text);';
+	  $res = db_query($sql, array($this->screenid, $this->feed, $itemid));
+  	if ($res===false) return null;
+  	if (db_num_rows($res)!=1) return null; // can't happen
+  	$feedinfo = db_fetch_assoc($res);
+  	if ($feedinfo['id']===null) $feedinfo=null;
+	
+		$c = $f->getItem($this->feed, $feedinfo);
+		return $c;
 	}
 }
 

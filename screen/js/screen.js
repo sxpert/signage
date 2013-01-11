@@ -4,10 +4,169 @@ var bgdata = null;
 var args = null;
 // est on en train de simuler un autre écran
 var simulate = false;
-// le feed courant
-var currfeed = null;
-// les positions actuels dans les feeds
-var feeds = {};
+
+var FeedList = function () {
+	this.feeds = null;
+}
+
+FeedList.prototype._getOldFeed = function (zoneid, id) {
+	if (this.feeds===null) return null;
+	if (this.feeds.hasOwnProperty(zoneid)) {
+		var z = this.feeds[zoneid];
+		if (z.hasOwnProperty('feeds')) {
+			var feeds = z.feeds;
+			for(var i=0;i<feeds.length;i++) {
+				if (feeds[i].id==id) {
+					return feeds[i];
+				}
+			}
+		}
+	}
+	return null;
+}
+
+// TODO: handle zone
+FeedList.prototype._update = function (data) {
+
+	var newfeeds = {};
+	var ids = Object.keys(data);
+	for (var i=0; i<ids.length; i++) {
+		var f = data[ids[i]];
+		
+		var oldfeed = this._getOldFeed(f.target, f.id);
+
+		var feed = {};
+		
+		feed['id'] = f.id;
+		feed['first'] = f.first;
+		feed['target'] = f.target;
+		if (oldfeed===null) {
+			feed['current'] = null;
+		} else {
+			feed['current'] = oldfeed.current;
+		}
+		
+		var z = null;
+		var feeds = null;
+
+		if (newfeeds.hasOwnProperty(f.target)) {
+			z = newfeeds[f.target];
+			if (z.hasOwnProperty('feeds')) {
+				feeds = z['feeds'];
+			} else {
+				feeds = new Array();
+			}
+		} else {
+			z = {};
+			var oz = null;
+			if ((this.feeds!==null)&&(this.feeds.hasOwnProperty(f.target))) {
+				oz = this.feeds[f.target];
+			}
+			if ((oz!==null)&&(oz.hasOwnProperty('current'))) {
+				z['current'] = oz['current'];
+			} else {
+				z['current'] = null;
+			}
+			feeds = new Array();
+		}
+		feeds.push(feed);
+		z['feeds'] = feeds;
+		newfeeds[f.target] = z;
+	}
+	this.feeds = newfeeds;
+}
+
+FeedList.prototype.update = function (zone, callback) {
+	var f = this;
+	// récupere les flux
+	$.ajax({
+		url: 'screen-get-feeds.php?screenid='+args['screenid'],
+		type: 'GET',
+		cache: false,
+		datatype: 'json',
+		success: function(data, textstatus, jqXHR) {
+			f._update(data);
+			// now genereate url
+			f._next(zone, callback);
+		}
+	});
+}
+
+FeedList.prototype._makeUrl = function (feed) {
+	var u = 'screen-zone-simul.php?';
+	u+='screenid='+args.screenid;
+	u+='&zone='+feed.target;
+	u+='&feedid='+feed.id;
+	u+='&itemid='+feed.current;
+	return u;
+}
+
+FeedList.prototype._makeNextUrl = function (feed) {
+	var u = 'screen-zone-simul-next.php?';
+	u+='screenid='+args.screenid;
+	u+='&feedid='+feed.id;
+	u+='&itemid='+feed.current;
+	console.log(u);
+	return u;
+}
+
+FeedList.prototype._next = function (zone, callback) {
+	if (this.feeds.hasOwnProperty(zone.id)) {
+		var z = this.feeds[zone.id];
+		var current = null;
+		if (z.hasOwnProperty('current')) {
+			current = z.current;
+		}
+		var feeds = null;
+		if (z.hasOwnProperty('feeds')) {
+			feeds = z.feeds;
+		}
+		if (current===null) {
+			current = 0;
+		} else {
+			if (feeds!==null) {
+				current++;
+				if (current>=feeds.length) {
+					current = 0;
+				}
+			} else {
+				current = null;
+			}
+		}
+		z.current = current;
+		var feed = z.feeds[current];
+		if (feed.current===null) {
+			feed.current = feed.first;
+			var u = this._makeUrl(feed);
+			callback(u);
+		} else {
+			// get next item in feed
+			var u = this._makeNextUrl(feed);
+			var f = this;
+			var restart = function() {
+				var u = f._makeUrl(feed);
+				callback(u);
+			}
+			$.ajax({
+				url: u,
+    		type: 'GET',
+	    	cache: false,
+				datatype: 'json',
+	    	success: function(data, textstatus, jqXHR) {
+					feed.current = data.next;
+					var u = f._makeUrl(feed);
+					callback(u);
+				},
+		    error: restart,
+		    timeout: restart
+			});
+		}
+	} else { 
+		callback('screen-zone.php?zone='+zone.id);
+	}
+}
+
+var feeds = new FeedList();
 
 function loadCss(css) {
 	var l = document.getElementsByTagName('link');
@@ -126,17 +285,7 @@ function refreshZone(zone) {
 
 	function callRefresh(zone, callback) {
 		if (simulate) {
-			// récupere les flux
-			$.ajax({
-					url: 'screen-get-feeds.php?screenid='+args['screenid'],
-					type: 'GET',
-					cache: false,
-					datatype: 'json',
-					success: function(data, textstatus, jqXHR) {
-						
-	
-					}
-				});
+			feeds.update(zone, callback);
 		} else {
 			callback('screen-zone.php?zone='+zone.id);
 		}

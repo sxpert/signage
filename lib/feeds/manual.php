@@ -14,8 +14,7 @@ class FeedManual {
    * Generate the next APOD content available
    *
    */
-  public function getNext($screenid, $feedid, $target) {
-    $signinfo = sign_feed_get_next ($screenid, $feedid);
+  public function getItem($feedid, $signinfo) {
     if ($signinfo['id']===null) return null;
 
     $html = '<div id="manuel">'.
@@ -32,6 +31,11 @@ class FeedManual {
     $resp = array('html'=>$html,'delay'=>60);
     return $resp;
   }
+
+  public function getNext($screenid, $feedid, $target) {
+    $signinfo = sign_feed_get_next ($screenid, $feedid);
+		return $this->getItem($feedid, $signinfo);
+	}
 
 }
 

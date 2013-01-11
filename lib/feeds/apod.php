@@ -501,7 +501,7 @@ class FeedAPOD {
 	public function fixMissing () {
 		$this->getFeedInfo();
 		$l = $this->getApodList($this->feedinfo['url']);
-		$feed = new SignFeed($this->feedinfo['id']);
+		$feed = new Feed($this->feedinfo['id']);
 		foreach ($l as $item) {
 			$d = DateTime::createFromFormat('Y-m-d H:i:s',$this->getDate($item).' 00:00:00');
 			if (!$feed->hasItem($d)) {
@@ -712,9 +712,7 @@ class FeedAPOD {
    * Generate the next APOD content available
    *
    */
-  public function getNext($screenid, $feedid, $target) {
-    //error_log ('FeedAPOD.getNext ($screenid='.$screenid.', $feedid='.$feedid.') invoked');
-    $signinfo = sign_feed_get_next ($screenid, $feedid);
+  public function getItem($feedid, $signinfo) {
     if ($signinfo['id']===null) return null;
     $id=$signinfo['id'];
     $date = substr($signinfo['ts'],0,10);
@@ -751,6 +749,10 @@ class FeedAPOD {
     return $resp;
   }
 
+  public function getNext($screenid, $feedid, $target) {
+    $signinfo = sign_feed_get_next ($screenid, $feedid);
+		return $this->getItem($feedid, $signinfo);
+	}
 }
 
 if (getenv('TERM')) {
