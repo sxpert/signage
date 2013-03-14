@@ -11,14 +11,14 @@ hlib_menu(sign_admin_menu());
 
 // lister les écrans
 db_connect();
-$res = db_query ('select * from screens order by id;');
+$res = db_query ('select * from screens where ignored=false order by id;');
 $screens = array();
 $headers = array(
   array('text'=>'Adresse IP',    'colstyle'=>'width:100pt', 'cellstyle'=>'text-align:right;'),
   array('text'=>'Nom de machine','colstyle'=>'width:200pt;','cellstyle'=>''),
   array('text'=>'Nom',           'colstyle'=>'width:200pt;','cellstyle'=>'text-overflow:ellipsis;'),
   array('text'=>'Actif',         'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
-  array('text'=>'Adopté',        'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
+  array('text'=>'Adopté',        'colstyle'=>'width:140px;', 'cellstyle'=>'text-align:center;')
 );
 $data = array();
 while ($row=db_fetch_assoc($res)) {
@@ -45,8 +45,9 @@ while ($row=db_fetch_assoc($res)) {
     array_push($values, '');
   // écran adopté
   if ($row['adopted']=='f') {
-    $b = '<button value="'.$row['id'].'" class="adopt">adopter</button>';
-    array_push($values, $b);
+    $ba = '<button value="'.$row['id'].'" class="adopt">adopter</button>';
+    $bi = '<button value="'.$row['id'].'" class="ignore">ignorer</button>';
+    array_push($values, $ba.$bi);
   } else
     array_push($values, 'oui');
 

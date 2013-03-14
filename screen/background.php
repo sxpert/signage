@@ -75,11 +75,19 @@ $z = array();
 $z['id']='_ticker';
 $z['x']=p($w,300);
 $z['y']=p($h,980);
-$z['w']=p($w,1920-300);
+$z['w']=p($w,1920-389);
 $z['h']=p($h,100);
 $z['fontSize']='80%';
 $z['backgroundColor']='black';
 $z['color']='white';
+array_push($zones,$z);
+
+$z = array();
+$z['id']='_logo';
+$z['x']=p($w,1920-89);
+$z['y']=p($h,980);
+$z['w']=p($w,89);
+$z['h']=p($h,100);
 array_push($zones,$z);
 
 $s['zones']=$zones;

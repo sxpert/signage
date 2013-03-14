@@ -4,5 +4,13 @@
 .adopt {
   border: 1px solid #ccc;
   border-radius: 3px;
+	width: 60px;
   background-color: PaleGreen;
+}
+.ignore {
+	margin-left: 3px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+	width: 60px;
+  background-color: SandyBrown;
 }

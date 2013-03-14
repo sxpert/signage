@@ -283,8 +283,13 @@ if (db_num_rows($res)>0) {
 		if ($feed['dateonly']=='t') array_push($values,$d);
 		else array_push($values, $row['date']);
 		array_push($values, $row['title']);
-		if ($row['active']=='t') array_push($values,'oui');
-		else array_push($values,'non');
+
+		$button = '<input type="checkbox" class="feed-item-active" ';
+		$button.= 'value="'.$row['id'].'" ';
+		if ($row['active']=='t') $button.='checked';
+		$button.='/>';
+		array_push($values, $button);
+		
 		$r['values'] = $values;
 		array_push($data,$r);
 	}
@@ -299,5 +304,6 @@ hlib_form_end ($form);
 /*
  * pied de page
  */
+hlib_script_add('js/feed-details.js', -1);
 hlib_footer();
 ?>

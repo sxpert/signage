@@ -1,8 +1,8 @@
 <?php
 
 //
-// apod.php
-// handles the apod feed
+// manual.php
+// handles a manual feed
 //
 
 $d = dirname(__file__);

@@ -541,6 +541,10 @@ class FeedAPOD {
       // obtain the contents of the apod archive file
       $this->getApodFromStart($this->feedinfo['url']);
     }
+# désactive les Apod de plus d'1 an
+		echo "deactivate apod entries older than 1 year\n";
+		db_query ('update feed_contents set active=false where id_feed=1 and date < (CURRENT_DATE - interval \'1 year\');');
+
   }
 
 	private function resizeJPEG ($fn) {

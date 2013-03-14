@@ -2,9 +2,9 @@
 require_once (dirname(dirname(__file__)).'/lib/signlib.php');
 
 $tickervalues = array(
-  'this ticker rocks',
-  'Rock-n-Roll',
-  'Sugar Baby !!'
+  'Flux d\'information IPAG',
+  '',
+  ''
 );
 
 $s = array();
@@ -14,6 +14,10 @@ $zone = trim(hlib_get_variable($_REQUEST,'zone'));
 $s['zone'] = $zone;
 
 switch ($zone) {
+	case '_logo':
+		$s['html'] = '<img src="/cache/images/logos/logo_ipag.png"/>';
+		$s['delay'] = 600;
+		break;
   case '_clock':
     $s['js'] = '/screen/js/clock.js';
     $s['delay'] = 5;

@@ -314,6 +314,27 @@ do $$
 		end if;
 	end;
 $$;
+--
+-- ajoute un champ last_update aux flux
+--
+do $$
+	begin
+		if update_version(13,14) then
+			alter table feeds add column last_update timestamp;
+		end if;
+	end;
+$$;
+--
+-- ajout d'un champ "ignored" défault a "false" pour les écrans
+--
+do $$
+	begin
+		if update_version(14,15) then
+			alter table screens add column ignored boolean default false;
+		end if;
+	end;
+$$;
+
 
 --
 -- ces fonctions sont 'in flux'
