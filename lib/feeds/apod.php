@@ -432,8 +432,9 @@ class FeedAPOD {
 						}
 					}
 	        // push this new item in the database
+					// by default, new items are active
 	        if ($img!=null)
-	          sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations);
+	          sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations,true);
 	        else
 	          echo "Unable to grab picture, skipping";
 	      }
@@ -542,8 +543,9 @@ class FeedAPOD {
       $this->getApodFromStart($this->feedinfo['url']);
     }
 # désactive les Apod de plus d'1 an
-		echo "deactivate apod entries older than 1 year\n";
-		db_query ('update feed_contents set active=false where id_feed=1 and date < (CURRENT_DATE - interval \'1 year\');');
+		echo "deactivate apod entries older than 6 months\n";
+		db_query ('update feed_contents set active=false where id_feed=$1 and date < (CURRENT_DATE - interval \'6 months\');',
+			array($this->feedinfo['id']));
 
   }
 
