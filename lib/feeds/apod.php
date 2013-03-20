@@ -461,7 +461,9 @@ class FeedAPOD {
 	private function getApodList($url) {
     global $HTTP_OPTS;
 		if (array_key_exists('proxy', $HTTP_OPTS)) {
-			$context = stream_context_create (array('http'=>array('proxy'=>$HTTP_OPTS['proxy'])));
+			$proxy = $HTTP_OPTS['proxy'];
+			echo "proxy: ".$proxy;
+			$context = stream_context_create (array('http'=>array('proxy'=>$proxy)));
 			$f = fopen($url, 'r', false, $context);
 		} else
     	$f = fopen($url, 'r');
