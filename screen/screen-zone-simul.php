@@ -14,6 +14,12 @@ $s['zone'] = $zone;
 $feed = new Feed(array('screen'=>$screenid, 'feed'=>$feedid));
 if (!is_null($feed)) {
   $c = $feed->getItem($itemid);
+	if (is_null($c)) {
+		error_log("small problem, data is null");
+		$c = array();
+		$c['delay']=5;
+		$c['html']='';
+	}
 	$s = array_merge($s,$c);
 }
 if (is_null($feed)) {

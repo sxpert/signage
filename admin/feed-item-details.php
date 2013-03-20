@@ -2,6 +2,8 @@
 $d = dirname(dirname(__file__));
 require_once($d.'/lib/signlib.php');
 
+$s = new Session();
+
 $new=false;
 $id=trim(hlib_get_variable($_REQUEST,'id'));
 if ($id!='new')

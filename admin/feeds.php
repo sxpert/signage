@@ -2,6 +2,8 @@
 $d = dirname(dirname(__file__));
 require_once($d.'/lib/signlib.php');
 
+$s = new Session();
+
 $errors=array();
 
 /* display the list of screens */

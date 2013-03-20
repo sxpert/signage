@@ -32,6 +32,8 @@ function sign_admin_menu () {
   hlib_menu_add_item ($menu, 'Gestion des écrans', '/admin/screens.php');
   hlib_menu_add_section ($menu, 'Actions utilisateur');
   hlib_menu_add_item ($menu, 'Flux d\'information', '/admin/feeds.php');
+	hlib_menu_add_separator($menu);
+	hlib_menu_add_item ($menu, 'Déconnexion','/admin/disconnect.php');
   return $menu;
 }
 
@@ -60,7 +62,116 @@ function sign_preload_list () {
  * 
  */
 
+class Session {
+	public function __construct() {
+		global $LDAP_SRV,$LDAP_PORT,$LDAP_BASEDN;
+		$this->initialized = False;
+	
+		error_log('session status '.session_status());
 
+		# initialisons la session...
+		if (!session_start()) {
+			error_log ("FATAL: error while initializing session");
+			$this->error ("Impossible d'initialiser la session");
+		}
+
+		# detecte si on a un nom d'utilisateur
+		if (array_key_exists('username',$_SESSION)) {
+			# le nom d'utilisateur est présent, l'utilisateur est loggué
+			# la session est initialisée correctement
+			$this->initialized = True;
+			return;
+		}
+
+		# on a pas trouvé de nom d'utilisateur...
+		# forçons le passage par le formulaire de login
+		# testons si on a les variables du formulaire de login
+		$action = hlib_get_variable($_POST,'action');
+		$errors = array();
+		error_log('action: '.$action);
+		if (strcmp($action,'login')==0) {
+			# on a trouvé la variable "action" avec "login" a l'intérieur.
+			# cherchons donc le nom d'utilisateur et le mot de passe
+			$uid = hlib_get_variable($_POST,'uid');
+			$passwd = hlib_get_variable($_POST,'passwd');
+			if ((strcmp($uid,'')!=0)&&(strcmp($passwd,'')!=0)) {
+				# login et mot de passe non vide... tentative de bind
+				$ld = ldap_connect ($LDAP_SRV,$LDAP_PORT);
+				if ($ld==False) {
+					$this->error('Impossible de se connecter au serveur LDAP');
+				}
+				ldap_set_option($ld, LDAP_OPT_PROTOCOL_VERSION, 3);
+				$dn='uid='.$uid.',ou=People,'.$LDAP_BASEDN;
+				$lbind=@ldap_bind($ld, $dn, $passwd);
+				ldap_close($ld);
+				if ($lbind) {
+					error_log('user '.$uid.' connected via LDAP');
+					# bind avec succes. 
+					# utilisateur et mot de passe correct
+					# vérifier si l'utilisateur est autorisé dans la base
+					$db = db_connect();
+					if ((is_bool($db)&&($db==False)) 
+						$this->error('Erreur de connexion a la base de données');
+					$res = db_query('select * from users where uid=$1',array($uid));
+					if (db_num_rows($res)==1) {
+						error_log('user '.$uid.' successfully logged in');
+						# tout s'est bien passé... initialisation de la session avec le nom de l'utilisateur
+						$_SESSION['username']=$uid;
+						return;	
+					} else
+						error_log('user '.$uid.' in LDAP, but not in database');
+				} else 
+					error_log('user '.$dn.' unknown in LDAP');
+				hlib_form_add_error($errors,'loginform','Utilisateur ou mot de passe incorrect');
+			}
+		}
+
+		# rien ne s'est passé correctement. 
+		# affichage du formulaire de login
+		$this->loginForm($errors);
+	}
+
+	#
+ 	# une erreur est survenue
+	public function error ($message) {
+		hlib_top();
+		hlib_menu();
+		echo "<p>".$message."</p>";
+		hlib_footer();
+		exit();
+	}
+
+	#
+	# déconnexion
+	public function disconnect () {
+		session_unset();
+	}
+
+	#
+	# formulaire de login
+	public function loginForm ($errors=null) {
+		if (is_null($errors))
+			$errors=array();
+
+		hlib_top();
+		hlib_menu();
+
+		# récupération des variables
+		# le nom de la page en cours
+		$action = $_SERVER['PHP_SELF'];
+		
+		# génération du formulaire
+		echo "<p>Utilisez votre utilisateur et mot de passe habituel</p>";
+		$form = hlib_form('POST',$action,$errors,array('id'=>'loginform'));
+		hlib_form_text($form,"Utilisateur","uid");
+		hlib_form_password($form,"Mot de passe","passwd");
+		hlib_form_button($form,'connexion','login');
+		hlib_form_end();
+
+		hlib_footer();
+		exit();
+	}
+}
 
 
 

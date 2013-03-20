@@ -3,6 +3,8 @@ $d = dirname(dirname(__file__));
 require_once($d.'/lib/hlib.php');
 require_once($d.'/lib/signlib.php');
 
+$s = new Session();
+
 /* display the list of screens */
 
 hlib_style_add('css/screens.css');

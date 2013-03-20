@@ -334,7 +334,28 @@ do $$
 		end if;
 	end;
 $$;
-
+--
+-- ajout d'une table des utilisateurs autorisés a utiliser l'application
+-- on a juste les logins pour l'instant, 
+-- ils doivent correspondre aux login dans le ldap
+--
+do $$
+	begin
+		if update_version(15,16) then
+			create table users (
+				uid	text primary key
+			);
+			grant select on users to signage;
+			--
+			-- trois utilisateurs connus
+			--
+			insert into users (uid) values
+				('jacquotr'),
+				('rousself'),
+				('lmichaud');
+		end if;
+	end;
+$$;
 
 --
 -- ces fonctions sont 'in flux'
