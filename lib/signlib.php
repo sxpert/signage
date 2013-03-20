@@ -110,7 +110,7 @@ class Session {
 					# utilisateur et mot de passe correct
 					# vérifier si l'utilisateur est autorisé dans la base
 					$db = db_connect();
-					if ((is_bool($db)&&($db==False)) 
+					if (is_bool($db)&&($db==False)) 
 						$this->error('Erreur de connexion a la base de données');
 					$res = db_query('select * from users where uid=$1',array($uid));
 					if (db_num_rows($res)==1) {
