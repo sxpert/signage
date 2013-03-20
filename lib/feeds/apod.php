@@ -366,8 +366,13 @@ class FeedAPOD {
    * Récupère une entrée du contenu APOD
    */
   private function getApod($url) {
-    echo "\n===================================================\n".$url;
-    $f = fopen($url, 'r');
+    global $HTTP_OPTS;
+		echo "\n===================================================\n".$url;
+		if (array_key_exists('proxy', $HTTP_OPTS)) {
+			$context = stream_context_create (array('http'=>array('proxy'=>$HTTP_OPTS['proxy'])));
+			$f = fopen($url, 'r', false, $context);
+		} else
+    	$f = fopen($url, 'r');
     if ($f) {
       echo "\n";
       // grab file contents
@@ -454,7 +459,12 @@ class FeedAPOD {
   }
 
 	private function getApodList($url) {
-		$f = fopen($url, 'r');
+    global $HTTP_OPTS;
+		if (array_key_exists('proxy', $HTTP_OPTS)) {
+			$context = stream_context_create (array('http'=>array('proxy'=>$HTTP_OPTS['proxy'])));
+			$f = fopen($url, 'r', false, $context);
+		} else
+    	$f = fopen($url, 'r');
 		$d = '';
 		while (!feof($f))
 			$d.=fread($f,4096);

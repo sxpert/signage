@@ -14,6 +14,7 @@ class FeedRss {
 	private $feedinfo;
 
 	public function update () {
+    global $HTTP_OPTS;
 		if (!$this->feedid) {
 			error_log ("ERROR: unknown feed");
 			return;
@@ -46,7 +47,11 @@ class FeedRss {
 
 		$url = 'http://ipag.osug.fr/spip.php?page=backend';
 		# ouvrir le fichier rss
-		$f = fopen ($url,'r');
+		if (array_key_exists('proxy', $HTTP_OPTS)) {
+			$context = stream_context_create (array('http'=>array('proxy'=>$HTTP_OPTS['proxy'])));
+			$f = fopen($url, 'r', false, $context);
+		} else
+    	$f = fopen($url, 'r');
 		$d = '';
 		while (!feof($f))
 			$d.= fread($f,4096);
