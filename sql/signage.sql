@@ -200,7 +200,7 @@ do $$
   declare
     apod_id	bigint;
   begin
-    if update_version(2,3) then
+    if update_version(1,3) then
     	--
 			-- champ dateonly boolean, afficher seulement la date pour ce feed
 			--
