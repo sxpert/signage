@@ -46,7 +46,7 @@ function get_url_contents($url) {
 	global $HTTP_OPTS;
 	$ch = curl_init();
 	if (array_key_exists('timeout', $HTTP_OPTS))
-		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, int($HTTP_OPTS['timeout']));
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, intval($HTTP_OPTS['timeout']));
 	else
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 	if (array_key_exists('proxy', $HTTP_OPTS)) {
