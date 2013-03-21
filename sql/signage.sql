@@ -135,7 +135,7 @@ do $$
       create index fk_feed_contents__id_feed on feed_contents(id_feed);
       alter table feed_contents add foreign key (id_feed) references feeds(id);
 
-      grant select, insert on feed_contents to signage;
+      grant select, insert, update on feed_contents to signage;
 
       --------------------------------------------------------------------------
       --
