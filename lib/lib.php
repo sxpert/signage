@@ -67,18 +67,29 @@ function get_url_contents($url) {
 
 function cache_url_to_file ($url, $file) {
   echo "saving url ".$url." to file ".$file."\n";
-  $src = fopen ($url, 'rb');
-  if ($src) {
-    $dest = fopen ($file, 'wb');
-    while (!feof($src))
-      fwrite ($dest, fread ($src, 4096));
-    fclose($src);
-    fclose($dest);
-    chmod ($file, 0664);
-    chgrp ($file, 'www-data');
-    return true;
-  }
-  echo "Unable to open source ".$url."\n";
+	global $HTTP_OPTS;
+	$ch = curl_init();
+	if (array_key_exists('timeout', $HTTP_OPTS))
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, intval($HTTP_OPTS['timeout']));
+	else
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+	if (array_key_exists('proxy', $HTTP_OPTS)) {
+		$u = parse_url($HTTP_OPTS['proxy']);
+		if (!is_bool($u)) {
+			if (!is_null($u['host']))
+				curl_setopt($ch, CURLOPT_PROXY, $u['host']);
+			if (!is_null($u['port']))
+				curl_setopt($ch, CURLOPT_PROXYPORT, $u['port']);
+		}
+	}
+	curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_FILE, $file);
+	$data = curl_exec($ch);
+	if ($data==true) {
+		chmod ($file, 0664);
+  	chgrp ($file, 'www-data');
+	  return true;
+	}
   return false;
 }
 
