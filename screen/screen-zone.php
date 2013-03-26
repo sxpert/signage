@@ -15,7 +15,7 @@ $s['zone'] = $zone;
 
 switch ($zone) {
 	case '_logo':
-		$s['html'] = '<img src="/cache/images/logos/logo_ipag.png"/>';
+		$s['html'] = '<img src="/screen/logos/logo_ipag.png"/>';
 		$s['delay'] = 600;
 		break;
   case '_clock':
