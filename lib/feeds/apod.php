@@ -670,6 +670,7 @@ class FeedAPOD {
 	}
 
   private function updateImage ($fn) {
+	return $fn;
 		$finfo = finfo_open(FILEINFO_MIME_TYPE);
 		$fmime = finfo_file($finfo,$fn);
 		finfo_close($finfo);
@@ -719,7 +720,8 @@ class FeedAPOD {
     $d = sign_base_dir();
     $len = strlen($d);
 	
-		$nfn=$fn=$signinfo['image'];
+    $nfn=$fn=$signinfo['image'];
+/*
     $nfn = $this->updateImage($fn);
 		if (strcmp($nfn,$fn)!=0) {
 			error_log('FeedAPOD::getNext::updateImage : file was changed to '.$nfn);
@@ -727,7 +729,9 @@ class FeedAPOD {
       if (!sign_update_image_filename($id, $fn))
         error_log('une erreur s\'est produite lors de la mise a jour du nom du fichier image dans la base');
     }
-    $picpath = substr($fn,$len);
+	*/
+error_log($fn);
+    $picpath = $fn; //substr($fn,$len);
 
 		// generate the array that will be sent with all the info
 		// lauches a client side javascript to generate the content 
