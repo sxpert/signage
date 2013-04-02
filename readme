@@ -1,4 +1,259 @@
-Required modules
-	
-* php5_pgsql
+Signage software
 
+This software allows displaying information on raspberrypi powered screens
+
+the raspberrypi runs chromium full screen and connects to the server
+
+below a dump of our internal wiki with installation docs (in french, sorry)
+
+Installation de la plateforme d'écrans afficheurs
+installation du serveur
+installation de paquets
+aptitude install vim-nox sudo screen mtr
+aptitude install ntp
+modifier /etc/ntp.conf pour utiliser le serveur de l'ujf ntp.ujf-grenoble.fr
+installation des services
+postgresql
+apache2
+php5
+aptitude install postgresql
+aptitude install apache2
+aptitude install libapache2-mod-php5
+aptitude install php5-gd php5-imagick php5-ldap php5-pgsql php5-curl
+configuration des mises à jour automatiques
+TODO
+installation des sources de l'appli
+# aptitude install git
+# cd /var/www
+# rm -rf *
+# git clone [clone from github] .
+initialisation de la base de données
+# su - postgres
+postgres@ecrans$ cd /var/www/sql
+postgres@ecrans$ createdb signage
+postgres@ecrans$ psql signage
+signage=# \i signage.sql
+signage=# \q
+postgres@ecrans$ exit
+création du répertoire de cache des images
+root@ecrans:/var/www# mkdir cache
+root@ecrans:/var/www# chown www-data:www-data cache
+ajout des programmes à exécuter pour la maintenance journalière dans /etc/crontab
+# update apod
+10 0    * * *   www-data cd /var/www/lib/feeds && TERM=cron php apod.php
+installation de youtube-dl (pour telecharger les videos youtube)
+<verbatpython-setuptoolsim> aptitude install python-setuptools python-pip git clone https://github.com/rg3/youtube-dl.git
+installation du client
+Installation du linux pour RaspberryPi?
+La distribution utilisée s'appelle Raspbian
+http://elinux.org/RaspberryPiBoard
+Procedure d'installation
+Installation de l'image raspberrypi
+-> installer raspbian, avec les options minimales (serveur ssh / outils systemes)
+http://www.raspbian.org/RaspbianInstaller
+mirror    : ftp.igh.cnrs.fr
+directory : /pub/os/linux/raspbian/raspbian
+
+le partitionnement est automatique
+Durant l'installation, il est demandé plusieurs fois si on est sur de pas vouloir installer de noyau. répondre oui, c'est tout a fait normal, le noyau se trouve ailleurs. il n'y a pas non plus de boot loader.
+Fichier de configuration pour la video
+dans le fichier /boot/config/txt
+# uncomment if you get no picture on HDMI for a default "safe" mode
+#hdmi_safe=1
+
+# uncomment this if your display has a black border of unused pixels visible
+# and your display can output without overscan
+disable_overscan=1
+
+# uncomment the following to adjust overscan. Use positive numbers if console
+# goes off screen, and negative if there is too much border
+#overscan_left=16
+#overscan_right=16
+#overscan_top=16
+#overscan_bottom=16
+
+# uncomment to force a console size. By default it will be display's size minus
+# overscan.
+#framebuffer_width=1280
+#framebuffer_height=720
+
+# uncomment if hdmi display is not detected and composite is being output
+#hdmi_force_hotplug=1
+
+# uncomment to force a specific HDMI mode (this will force VGA)
+#hdmi_group=1
+#hdmi_mode=1
+
+# uncomment to force a HDMI mode rather than DVI. This can make audio work in
+# DMT (computer monitor) modes
+#hdmi_drive=2
+
+# uncomment to increase signal to HDMI, if you have interference, blanking, or
+# no display
+#config_hdmi_boost=4
+
+# uncomment for composite PAL
+sdtv_mode=2
+
+#uncomment to overclock the arm. 700 MHz is the default.
+#arm_freq=800
+
+# for more options see http://elinux.org/RPi_config.txt
+installation d'outils standard
+aptitude install vim-nox mtr htop
+à partir de là, on peut se connecter en ssh a la raspberry pi, c'est plus pratique
+supprimer le fichier =/lib/udev/rules.d/75-persistent-net-generator.rules=
+supprimer le fichier =/etc/udev/rules.d/70-persistent-net.rules
+ajouter un fichier /etc/dhcp/dhclient-exit-hooks.d/hostname
+#!/bin/sh
+# Filename: /etc/dhcp3/dhclient-exit-hooks.d/hostname
+# Purpose: Used by dhclient-script to set the hostname of the system
+# to match the DNS information for the host as provided by
+# DHCP.
+# Depends: dhcp3-client (should be in the base install)
+# hostname (for hostname, again, should be in the base)
+# bind9-host (for host)
+# coreutils (for cut and echo)
+#
+if [ "$reason" != BOUND ] && [ "$reason" != RENEW ] \
+ && [ "$reason" != REBIND ] && [ "$reason" != REBOOT ]
+then
+  return
+fi
+
+echo dhclient-exit-hooks.d/hostname: Dynamic IP address = $new_ip_address
+hostname=$(host $new_ip_address | cut -d ' ' -f 5 | cut -d '.' -f 1)
+
+echo $hostname > /etc/hostname
+hostname $hostname
+
+echo dhclient-exit-hooks.d/hostname: Dynamic Hostname = $hostname
+# And that _should_ just about do it...
+qui permets de récupérer automatiquement le bon nom de machine dans le hostname
+installation d'une couche graphique basique
+aptitude install xinit mesa-utils libosmesa6
+aptitude install dbus dbus-x11
+configurer X pour que tout le monde puisse l'utiliser
+dpkg-reconfigure x11-common
+sélectionner l'option anybody
+upgrades automatiques
+aptitude install unattended-upgrades
+créer un fichier /etc/apt/apt.conf.d/02periodic contenant
+APT::Periodic::Enable "1";
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::AutocleanInterval "5";
+APT::Periodic::Unattended-Upgrade "1";
+dans /etc/apt/apt.conf.d/50unattended-upgrades changer
+// l'installation se fait au reboot de 6h
+Unattended-Upgrade::InstallOnShutdown "true";
+// toujours envoyer un mail
+Unattended-Upgrade::Mail "root";
+// étant donné qu'on reboot a 6h du matin...
+Unattended-Upgrade::Automatic-Reboot "false";
+Installation de chromium
+l'application est basée sur un navigateur web (dans le cas précis, chromium)
+# aptitude install chromium
+ceci va installer toutes les dépendances nécessaires pour chromium, y compris X-Window
+Installation d'unclutter
+Unclutter est un outil permettant de cacher la souris quand elle ne sert pas
+# aptitude install unclutter
+installation du player multimedia
+aptitude install fonts-freefont-ttf  
+omxplayer_0.2.5~git20130326~5b369233_armhf.deb
+Configuration
+/etc/rc.local
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+
+setterm -blank 0 -powersave off -powerdown 0
+su - sign /home/sign/init.sh &
+
+exit 0
+Utilisateur spécifique
+pour raisons de sécurité, l'affichage est réalisé sous le compte d'un utilisateur non privilégié sign
+adduser sign
+mot de passe généré aléatoirement xxxxxxxxx (normalement n'a pas d'utilité)
+/etc/crontab
+reboot automatique a 6 heures du matin, les navigateurs ont quelques problemes de gestion de mémoire...
+note: les autres scripts sont lancés a partir de 5hxx du matin, ca permets entre autres d'avoir téléchargé les mises a jour juste avant le reboot
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+# m h dom mon dow user   command
+17 *   * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 5   * * *   root   test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 5   * * 7   root   test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+52 5   1 * *   root   test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+#
+
+00 6    * * *   root    /sbin/reboot
+00 22   * * *   sign    DISPLAY=:0.0 /usr/bin/xset dpms force off
+Fichiers de configuration
+/home/sign/init.sh
+#!/bin/bash
+/usr/bin/xinit -- /usr/bin/X -s 0 -dpms &
+puis
+# chown sign:sign init.sh 
+# chmod u+x init.sh
+/home/sign/.xinitrc
+#!/bin/bash
+export DISPLAY=:0.0
+LOG=/home/sign/logs
+URL="http://ecrans.obs.ujf-grenoble.fr/screen/"
+LOGGER=/usr/bin/logger
+SLEEP=/bin/sleep
+SETTERM=/usr/bin/setterm
+XSET=/usr/bin/xset
+CHROMIUM=/usr/bin/chromium
+USER_DIR="--user-data-dir=/home/sign/chrome"
+DEBUG="--remote-debugging-port=9222"
+WINDOW="--window-size=1920,1080 --window-position=0,0"
+OPTIONS="--disable-webgl"   
+UNCLUTTER=/usr/bin/unclutter
+
+${LOGGER} "starting chromium"
+${LOGGER} "setting X to not turn off"
+${XSET} s 0 >> ${LOG} 2>&1 
+${XSET} s noblank >> ${LOG} 2>&1
+${XSET} dpms force on >> ${LOG} 2>&1
+${LOGGER} "starting unclutter"
+${UNCLUTTER} >> ${LOG} 2>&1 &
+#
+# run chrome in a loop (for when it gets killed by OOMK
+#
+while true; do
+   echo "================================================================" >> ${LOG}
+   date >> ${LOG}
+   rm -rf /home/sign/.config/chromium/Singleton*
+   ${CHROMIUM} ${DEBUG} ${WINDOW} ${OPTIONS} --app="${URL}" >> ${LOG} 2>&1
+   echo "" >> ${LOG}
+   echo ">>>>> CRASH DETECTED <<<<<" >> ${LOG}
+done
+puis
+# chown sign:sign .xinitrc
+on peut rebooter la raspberry pi avec
+# reboot
