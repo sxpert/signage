@@ -26,6 +26,8 @@
 	    background-color: black;
 	    z-index: 0;
 	    height: 86px;
+			font-size: 50px;
+			color: white;
     }
     #text-logo-centre {
     	position: absolute;

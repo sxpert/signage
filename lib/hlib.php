@@ -211,7 +211,7 @@ function hlib_top ($styles=null) {
   echo "<body>\n";
   echo "<div id=\"top\">";
   echo "<a href=\"/\">";
-  // TODO: handle contents of the page header
+	echo $_SERVER['SERVER_NAME'];
   echo "</a>";
   echo "</div>\n";
 }

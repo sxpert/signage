@@ -409,14 +409,16 @@ class FeedAPOD {
           	error_log('idx='.print_r($idx,1));
           	if ($idx!==false) {
 	        	  $install = get_install_path();
-	       		  $apodcache = $install."/cache/images/apod/".$this->getImageDir($date).'/';
-	        	  make_webserver_dir ($apodcache);
+							$apodcache = "/cache/images/apod/".$this->getImageDir($date).'/';
+	       		  $directory = $install.$apodcache;
+	        	  make_webserver_dir ($directory);
 
 	        	  if (($uimg['scheme']=='http')&&($uimg['host']=='apod.nasa.gov')) {
-	        	    $fname = $apodcache.substr($date,8,2).'-'.basename($i);
+	        	    $apodfname= $apodcache.substr($date,8,2).'-'.basename($i);
+								$fname = $install.$apodfname;
 	        	    if (cache_url_to_file ($i, $fname)) {
 	      					echo $i."\n";
-	        	      $i = $fname;
+	        	      $i = $apodfname;
 	        	    } else
 	        	      $i=null;
 	        	  }
