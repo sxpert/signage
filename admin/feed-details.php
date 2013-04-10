@@ -63,9 +63,12 @@ if ($new) {
 		'dateonly'=> $dateonly
 	);
 } else {
-	// fatal error at this point ! (shouldn't happen)
+	// we have a feed id, try it
 	if (is_numeric($id)) {
- 		$feed = sign_feed_get($id, true);
+ 		$feed = sign_feed_get($id, false);
+		// feed non-existent. redirect to feed list
+		if (is_null($feed))
+			hlib_redirect ('/admin/feeds.php');
 		// calc list dimensions
 		$last_item = sign_feed_number_items($id)-1;
 	}

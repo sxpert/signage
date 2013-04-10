@@ -356,6 +356,27 @@ do $$
 		end if;
 	end;
 $$;
+--
+-- ajout d'un type de flux spip
+--
+do $$
+	begin
+		if update_version(16,17) then
+      insert into feed_types (name, php_script, php_class) values 
+				('spip2spip',  '/lib/feeds/spip.php',  'FeedSpip');
+		end if;
+	end;
+$$;
+--
+-- ouh que c'etait pas beau ce bug !
+--
+do $$
+	begin
+		if update_version(17,18) then
+			create or replace view feed_type_list as select id as key, name as value from feed_types where system=false order by name;
+		end if;
+	end;
+$$;
 
 --
 -- ces fonctions sont 'in flux'
