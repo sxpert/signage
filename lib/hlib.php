@@ -983,7 +983,11 @@ function hlib_form_nav ($form, $nav, $current_pos, $last_item, $nb_elems,
 	echo "<input type=\"hidden\" name=\"".$nav."[perpage]\" value=\"".$nb_elems."\"/>";
 	// fill in
 	echo "<span id=\"".$nav."-center\">";
-	echo "éléments ".$current_pos." à ".($current_pos+$nb_elems-1)." sur ".$last_item;
+	$last_page_item = $current_pos+$nb_elems-1;
+	if ($last_page_item>$last_item)
+		$last_page_item = $last_item;
+	// les valeurs sont calculées en commençant à 0...
+	echo "éléments ".($current_pos+1)." à ".($last_page_item+1)." sur ".($last_item+1);
 	echo "</span>";
 
 	echo "<span id=\"".$nav."-right\"";
