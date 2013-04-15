@@ -2,9 +2,7 @@
 require_once (dirname(dirname(__file__)).'/lib/signlib.php');
 
 $tickervalues = array(
-  'Flux d\'information IPAG',
-  '',
-  ''
+  '<span style="font-size:50%">Mise à jour réseau UJF - internet indisponible<br/>25 Avril 2012 de 18 a 23h</span>',
 );
 
 $s = array();
