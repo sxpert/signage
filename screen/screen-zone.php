@@ -2,6 +2,7 @@
 require_once (dirname(dirname(__file__)).'/lib/signlib.php');
 
 $tickervalues = array(
+	'Flux d\'information IPAG'
   '<span style="font-size:50%">Mise à jour réseau UJF - internet indisponible<br/>25 Avril 2012 de 18 a 23h</span>',
 );
 
@@ -21,7 +22,7 @@ switch ($zone) {
     $s['delay'] = 5;
     break;
   case '_ticker':
-    $s['html'] = '<span>'.$tickervalues[rand(0,2)].'</span>';
+    $s['html'] = '<span>'.$tickervalues[rand(0,count($ticketvalues))].'</span>';
     $s['delay'] = 10;
     break;
   default:
