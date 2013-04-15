@@ -22,7 +22,7 @@ switch ($zone) {
     $s['delay'] = 5;
     break;
   case '_ticker':
-    $s['html'] = '<span>'.$tickervalues[rand(0,count($ticketvalues))].'</span>';
+    $s['html'] = '<span>'.$tickervalues[rand(0,count($tickervalues)-1)].'</span>';
     $s['delay'] = 10;
     break;
   default:
