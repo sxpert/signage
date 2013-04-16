@@ -377,6 +377,49 @@ do $$
 		end if;
 	end;
 $$;
+--
+-- gestion des targets pour chaque écran
+-- 
+do $$
+	begin
+		if update_version(18,19) then
+			-- ajout des parametres a l'écran (json sérialisé)
+			alter table screens add column parameters text;
+			-- ajout de la table des zones
+			create table screen_zones (
+				id_screen				bigint references screens(id),
+				-- name of the zone
+				zone_name				text,
+				-- feed actuel sur la zone
+				current_feed		bigint references feeds(id),
+				-- json object serialized to text
+				parameters			text,
+				primary key (id_screen, zone_name)
+			);
+			grant select, insert, update on screen_zones to signage;
+
+		end if;
+	end;
+$$;
+-- migration de test
+do $$
+	declare
+		screenid			bigint;
+		currentfeed		bigint;
+	begin
+		if update_version(19,20) then
+			for screenid, currentfeed in select id, current_feed from screens where adopted=true loop
+				insert into screen_zones (id_screen, zone_name, current_feed) values 
+					(screenid, 'image', currentfeed),
+					(screenid, '_clock', null),
+					(screenid, '_ticker', null),
+					(screenid, '_logo', null);
+			end loop;
+		end if;
+	end;
+$$;
+
+
 
 --
 -- ces fonctions sont 'in flux'
@@ -410,14 +453,15 @@ do $$
       -- find the next feed for a given screen 
       -- TODO: handle more of the available options
       --
-      create or replace function get_next_feed_id (l_screen_id bigint) returns bigint as $q$
+      create or replace function get_next_feed_id (l_screen_id bigint, l_zone_name text) returns bigint as $q$
         declare
           t_curr_index bigint;
 					t_next_index bigint;
           t_next_feed  bigint;
         begin
-          select current_feed into t_curr_index from screens 
-						where id = l_screen_id and adopted = true and enabled = true for update;
+          select sz.current_feed into t_curr_index from screens as s, screen_zones as sz
+						where s.id=sz.id_screen and s.id = l_screen_id and s.adopted = true and s.enabled = true 
+						and sz.zone_name = l_zone_name for update of sz;
           raise notice 'current_feed %',t_curr_index;
           if not found then
             -- unable to find the line for that screen id
@@ -448,13 +492,15 @@ do $$
             end if;
           end if;
           -- update the record
-          update screens set current_feed = t_next_index where id = l_screen_id;
+          update screen_zones set current_feed = t_next_index where id_screen = l_screen_id and zone_name=l_zone_name;
 					-- get the corresponding feed_id
 					select id_feed into t_next_feed from screen_feeds 
 						where id_screen = l_screen_id and feed_order = t_next_index;
           return t_next_feed;
         end;
       $q$ language plpgsql;
+
+			drop function if exists get_next_feed_id (l_screen_id bigint);
 
 
       --------------------------------------------------------------------------

@@ -289,11 +289,11 @@ class FeedSpip {
 				}
 			
 				# on pourrait ici récupérer une image, le cas échéant
-				
+				/*	
 				error_log("date >>".print_r($date,1));
 				error_log("title >>".print_r($title,1));
 				error_log("descriptif".print_r($desc,1));
-
+				*/
 				if (($title!=null)&&($date!=null)&&($desc!=null)) {
 					# sauvegarde de l'item dans les iformations de flux.
 					# note : utilisation de la date comme clé

@@ -30,7 +30,7 @@ switch ($zone) {
 	  $screen_id = get_screen_id (get_remote_ip ());
     // get the next feed id
     // TODO: take the target into account !
-    $feed_id = get_next_feed_id ($screen_id,false);
+    $feed_id = get_next_feed_id ($screen_id,$zone,false);
     //$feed_id = null;
     if ($feed_id==null) {
       // default error message

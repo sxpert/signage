@@ -304,9 +304,9 @@ function get_screen_id ($ip_addr) {
   return $row['id'];
 }
 
-function get_next_feed_id ($screen_id, $simul) {
+function get_next_feed_id ($screen_id, $zone, $simul) {
   db_connect();
-  $res = db_query('select get_next_feed_id($1) as feed_id', array($screen_id));
+  $res = db_query('select get_next_feed_id($1,$2) as feed_id', array($screen_id,$zone));
   $row = db_fetch_assoc ($res);
   return $row['feed_id'];
 }
