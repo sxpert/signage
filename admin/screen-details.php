@@ -18,8 +18,11 @@ $feeds = hlib_get_variable($_REQUEST,'feeds');
 
 $id_feed = hlib_get_numeric_variable($_REQUEST,'id-feed');
 $feed_active = hlib_get_checkbox($_REQUEST,'feed-active');
+$disp_time = hlib_get_variable($_REQUEST,'disp-time');
+$disp_zone = hlib_get_variable($_REQUEST,'disp-zone');
 
-sign_screen_exists($id, true);
+if (!sign_screen_exists($id, false))
+	hlib_redirect ('/admin/screens.php');
 
 $errors = array ();
 $success = false;
@@ -43,13 +46,22 @@ if ($action!='') {
     break;
 	case 'modify-active-feeds':
 		if (sign_screen_activate_feeds($id,$feeds))
+
 			$success = 'Liste des flux actifs modifiée avec succès';
 		break;
 	case 'add-feed':
-		if (sign_screen_add_feed($id,$id_feed,$feed_active)=='f')
-			hlib_form_add_error($errors,'add-feed','Une erreur est survenue pendant l\'ajout du flux');
-		else 
-			$success = 'Flux ajouté avec succès';
+		$v = sign_screen_add_feed($id,$id_feed,$feed_active,$disp_time,$disp_zone);
+		switch ($v) {
+			case 0:
+				$success = 'Flux ajouté avec succès';
+				break;
+			case 1:
+			case 2:	
+ 				hlib_form_add_error($errors,'add-feed','Une erreur est survenue pendant l\'ajout du flux');
+				break;
+			case 3:
+				hlib_form_add_error($errors,'add-feed','Ce flux est déjà dans la liste');
+		}
 		break;
   }
 }
@@ -92,10 +104,42 @@ hlib_form_end ($form);
 
 if ($screen['adopted']=='t') {
 
-	// screen simulation
+	/*
+	 * liste des zones de l'écran
+	 */
+	echo "<h2>Zones définies sur l'écran</h2>\n";
+	$res = db_query('select zone_name, parameters from screen_zones where id_screen=$1 order by zone_name',
+		array($screen['id']));
+	if (db_num_rows($res)>0) {
+		$header = array (
+			array('text'=>'nom','colstyle'=>'width:70pt'),
+			array('text'=>'paramètres','colstyle'=>'width:350pt')
+		);
+		$data = array();
+		while ($row=db_fetch_assoc($res)) {
+			$r = array();
+			$values = array();
+			array_push($values, $row['zone_name']);
+			array_push($values, $row['parameters']);
+			$r['values']=$values;
+			array_push($data, $r);
+		}
+		$zones['header']=$header;
+		$zones['data']=$data;
+		hlib_datatable($zones);
+		echo "<div><button id=\"add-zone\">Ajouter une zone</button></div>\n";
+	} else {
+		echo "<div><i>pas de zones encore définies</i></div>\n";
+	}
+
+	echo "<hr/>\n";
+
+	/*
+	 * screen simulation
+	 */
 	$w = 500;
 	$h = floor(($w*9)/16);
-	echo "<iframe src=\"/screen/index.php?screenid=".$screen['id']."\" ".
+	echo "<iframe id=\"simulator\" src=\"/screen/index.php?screenid=".$screen['id']."\" ".
 			 "style=\"border:1px solid black;width:".$w."px;height:".$h."px;\"".
 		   "></iframe>\n";
 
@@ -108,7 +152,7 @@ if ($screen['adopted']=='t') {
 
   // create the data array
   $res = db_query('select sf.id_feed, sf.feed_order, sf.active, ft.name as type, '.
-			'f.name as name '.
+			'f.name as name, sf.duration as duration, sf.target as target '.
 		  'from screen_feeds as sf, feeds as f, feed_types as ft '.
       'where sf.id_feed=f.id and f.id_type=ft.id and sf.id_screen=$1 '.
 		  'order by sf.feed_order;', array($screen['id']));
@@ -116,7 +160,9 @@ if ($screen['adopted']=='t') {
   $headers = array(
 		   array('text'=>'Type de flux','colstyle'=>'width:70pt;'),
 		   array('text'=>'Nom du flux', 'colstyle'=>'width:200pt;'),
-		   array('text'=>'Actif',       'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
+		   array('text'=>'Actif',       'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
+			 array('text'=>'Durée Aff.',  'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:right;'),
+			 array('text'=>'Zone Aff.',   'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
   );
   $data = array();
   while($row=db_fetch_assoc($res)) {
@@ -133,6 +179,8 @@ if ($screen['adopted']=='t') {
     //  array_push($values, 'oui');
 		$chb = '<input type="checkbox" name="feeds['.$row['id_feed'].']" '.(($row['active']=='t')?'checked':'').'/>';
 		array_push($values,$chb);
+		array_push($values,$row['duration']);
+		array_push($values,$row['target']);
 
     // TODO: petit nom du flux !
 
@@ -157,6 +205,8 @@ if ($screen['adopted']=='t') {
   hlib_form_hidden($form, 'id', $screen['id']);
 	hlib_form_select($form,'Nom du flux', 'id-feed', $id_feed, 'feed_list');
 	hlib_form_checkbox($form,'Flux actif', 'feed-active',$feed_active);
+	hlib_form_text($form,'Durée d\'affichage (secondes)', 'disp-time', $disp_time);
+	hlib_form_select($form,'Zone d\'affichage', 'disp-zone', $disp_zone, 'zone_list where id='.intval($screen['id']));
 	hlib_form_button($form,'Ajouter un flux','add-feed');
 	hlib_form_end($form);
 	
@@ -173,5 +223,6 @@ if ($screen['adopted']=='t') {
 /*
  * pied de page
  */
+hlib_script_add('js/screen-details.js', -1);
 hlib_footer();
 ?>

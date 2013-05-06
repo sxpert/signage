@@ -418,8 +418,24 @@ do $$
 		end if;
 	end;
 $$;
-
-
+--
+-- ajoute le temps d'attente
+do $$
+	begin
+		if update_version(20,21) then
+			alter table screen_feeds add column duration int default 60;
+		end if;
+	end;
+$$;
+-- ajout de la vue sur les zones
+do $$
+	begin
+	  if update_version(21,22) then
+			create or replace view zone_list as select id_screen as id, zone_name as key, zone_name as value from screen_zones;
+			grant select on zone_list to signage;
+		end if;
+	end;
+$$;
 
 --
 -- ces fonctions sont 'in flux'
@@ -592,9 +608,9 @@ do $$
 			-------------------------------------------------------------------------
 			--
 			-- ajoute un flux a un écran
-			-- 
+			-- la seule raison de l'échec, c'est une unique violation...
 			--
-			create or replace function screen_append_feed (l_screen bigint,l_feed bigint,l_active boolean,l_target text) returns boolean as $q$
+			create or replace function screen_append_feed (l_screen bigint,l_feed bigint,l_active boolean,l_duration int, l_target text) returns boolean as $q$
 				declare
 					t_order	bigint;
 				begin
@@ -606,14 +622,16 @@ do $$
 						t_order := 0;
 					end if;
 					begin
-						insert into screen_feeds (id_screen, id_feed, feed_order, active, target)
-							values (l_screen, l_feed, (t_order+1), l_active, l_target);
+						insert into screen_feeds (id_screen, id_feed, feed_order, active, duration, target)
+							values (l_screen, l_feed, (t_order+1), l_active, l_duration, l_target);
 					exception when unique_violation then
 						return false;
 					end;
 					return true;
 				end;
 			$q$ language plpgsql;
+
+			drop function if exists screen_append_feed (l_screen bigint,l_feed bigint,l_active boolean,l_target text);
 
 			-------------------------------------------------------------------------
 			-- 

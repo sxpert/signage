@@ -63,7 +63,7 @@ function sign_preload_list () {
  */
 
 class Session {
-	public function __construct() {
+	public function __construct($redirect=true) {
 		global $LDAP_SRV,$LDAP_PORT,$LDAP_BASEDN;
 		$this->initialized = False;
 	
@@ -80,6 +80,10 @@ class Session {
 			# le nom d'utilisateur est présent, l'utilisateur est loggué
 			# la session est initialisée correctement
 			$this->initialized = True;
+			return;
+		}
+
+		if ($redirect===false) {
 			return;
 		}
 
@@ -279,12 +283,24 @@ function sign_update_screen ($id, $values) {
   return db_update ('screens', array('id', $id), $values);
 }
 
-function sign_screen_add_feed($id, $feedid, $active) {
+function sign_screen_add_feed($id, $feedid, $active, $disp_time, $disp_zone) {
+	if (!is_numeric($disp_time)) {
+		error_log('sign_screen_add_feed : disp_time not numeric \''.$disp_time.'\'');	
+		return 1;
+	}
+	$disp_time=intval($disp_time);
+	error_log('adding new feed');
 	db_connect();
-	$res = db_query('select screen_append_feed($1,$2,$3,$4) as ok;',
-									array($id,$feedid,$active,'image'));
+	$res = db_query('select screen_append_feed($1,$2,$3,$4,$5) as ok;',
+									array($id,$feedid,$active,$disp_time,$disp_zone));
+	if (is_bool($res)) {
+		error_log(db_last_error());
+		return 2;
+	}
 	$r = db_fetch_assoc($res);
-	return $r['ok'];
+	if ($r['ok']=='f')
+		return 3;
+	return 0;
 }
 
 function sign_screen_activate_feeds ($screen,$feeds) {

@@ -90,21 +90,24 @@ function hlib_reject () {
   exit(1);
 }
 
-function hlib_fail ($code, $message) {
+function hlib_fail ($code, $message=null, $ajax=false) {
   switch($code) {
   case 403: $msg = 'Forbidden'; break;
   case 404: $msg = 'Not found'; break;
   case 405: $msg = 'Method not allowed'; break;
+	case 412: $msg = 'Precondition failed'; break;
   case 500: $msg = 'Internal server error'; break;
   default: $code = 200; $msg = 'OK';
   }
 
   header($_SERVER['SERVER_PROTOCOL'].' '.$code.' '.$msg);
-  hlib_top();
-  $menu = hlib_default_menu();
-  hlib_menu($menu);
-  echo $message;
-  hlib_footer();
+	if ($ajax===false) {
+		hlib_top();
+ 		$menu = hlib_default_menu();
+  	hlib_menu($menu);
+  	echo $message;
+  	hlib_footer();
+	}
   exit (1);
 }
 
