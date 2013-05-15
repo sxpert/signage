@@ -2,7 +2,7 @@
 $d = dirname(dirname(dirname(__file__)));
 require_once($d.'/lib/signlib.php');
 
-$s = new Session();
+$s = new Session(false);
 
 if ($s->initialized===false) {
 	/* 403 */

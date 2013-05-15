@@ -1,0 +1,73 @@
+#screen-info, #zones-info {
+	table-layout: fixed;
+}
+
+#screen-info th.col0,
+#zones-info th.col0 {
+	width: 70pt;
+}
+
+#screen-info th.col1,
+#zones-info th.col1 {
+	width: 350pt;
+} 
+
+#screen-info tr td + td span,
+#screen-info tr td + td input {
+	display: inline-block;
+	width: 70pt;
+	margin: 0px;
+	padding-right: 1pt;
+	border: 1px solid rgba(0,0,0,0);
+	text-align: right;
+}
+
+#screen-info tr td + td input, 
+#zones-info tr input {
+  margin-top: 1px;
+	border: 1px inset;
+	padding-top: 0px;
+	padding-bottom: 2px;
+	height: 21px;
+}
+
+#zones-info tr td {
+	vertical-align: top;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+#zones-info tr td input {
+	width: 70pt;
+	border: 1px inset;
+}
+
+#zones-info td + td span {
+	display: inline-block;
+}
+
+#zones-info span.zone-param-label {
+	width: 70pt;
+}
+#zones-info span.zone-param-value {
+	width: 60pt;
+}
+#zones-info span.zone-param-unit {
+	width: 25pt;
+}
+
+#zones-info tr td + td div,
+#zones-info tr input {
+}
+
+.icon-button {
+	float :right;
+	width :16px;
+	height :16px;
+	border: 1px outset;
+	padding: 3px;
+	margin-left: 4px;
+	margin-top: 4px;
+	cursor: pointer;
+	border-radius: 3px;
+}

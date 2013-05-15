@@ -73,6 +73,7 @@ if (db_num_rows($res)) {
   /* écran inexistant ! */
 }
 
+hlib_style_add('css/screen-details.css');
 hlib_top();
 hlib_menu(sign_admin_menu());
 
@@ -107,30 +108,24 @@ if ($screen['adopted']=='t') {
 	/*
 	 * liste des zones de l'écran
 	 */
-	echo "<h2>Zones définies sur l'écran</h2>\n";
-	$res = db_query('select zone_name, parameters from screen_zones where id_screen=$1 order by zone_name',
-		array($screen['id']));
-	if (db_num_rows($res)>0) {
-		$header = array (
-			array('text'=>'nom','colstyle'=>'width:70pt'),
-			array('text'=>'paramètres','colstyle'=>'width:350pt')
-		);
-		$data = array();
-		while ($row=db_fetch_assoc($res)) {
-			$r = array();
-			$values = array();
-			array_push($values, $row['zone_name']);
-			array_push($values, $row['parameters']);
-			$r['values']=$values;
-			array_push($data, $r);
-		}
-		$zones['header']=$header;
-		$zones['data']=$data;
-		hlib_datatable($zones);
-		echo "<div><button id=\"add-zone\">Ajouter une zone</button></div>\n";
-	} else {
-		echo "<div><i>pas de zones encore définies</i></div>\n";
-	}
+	echo "<h2>Configuration de l'écran</h2>\n";
+
+	$params = json_decode($screen['parameters'], true);
+	if (is_null($params)) 
+		$params = array();
+	
+	echo "<pre>";
+	print_r($params);
+	echo "</pre>\n";
+	echo "<h3>Paramètres de l'écran</h3>\n";
+
+	echo "<table id=\"screen-info\"></table>\n";
+	
+	echo "<h3>Paramètres des zônes d'affichage</h3>\n";
+
+	echo "<table id=\"zones-info\"></table>\n";
+
+	echo "<div><button id=\"add-zone\">Ajouter une zone</button></div>\n";
 
 	echo "<hr/>\n";
 
