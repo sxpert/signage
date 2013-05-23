@@ -89,6 +89,33 @@ function setScreenParam(param, value) {
 	p[param] = value;
 }
 
+function getZoneCount () {
+	var zs = screenData['zones'];
+	if (zs===null) return 0;
+	return zs.length;
+}
+
+function addZone () {
+	console.log(screenData);
+	var zs = screenData['zones'];
+	if (zs===null) {
+		zs = [];
+		screenData['zones'] = zs;
+	}
+	zs.push({});
+	console.log(screenData);
+}
+
+function getZoneName (zoneid) {
+	zoneid = parseInt(zoneid);
+	var zs = screenData['zones'];
+	if (zs===null) return null;
+	if ((zoneid<0)&&(zoneid>=zs.length)) return null;
+	var z = zs[zoneid];
+	if (z===undefined) return '';
+	return z['name'];
+}
+
 function getZoneParamLabel (param) {
 	return zoneParams[param][0];
 }
@@ -98,14 +125,11 @@ function getZoneParamUnit (param) {
 }
 
 function getZoneParam (zone, param) {
-	console.log(screenData);
 	var zs = screenData['zones'];
 	if (zs===null) return null;
 	// find zone
 	for (i in zs) {
 		z = zs[i];
-		console.log (i);
-		console.log (z);
 		if (z.hasOwnProperty('name')) {
 			if (z['name']==zone) {
 				// find parameter
@@ -120,6 +144,7 @@ function getZoneParam (zone, param) {
 	return null;
 }
 
+
 /******************************************************************************
  *
  */
@@ -127,7 +152,6 @@ function getZoneParam (zone, param) {
 function getZoneViewer() {
 	var zv = document.getElementById("zone-viewer");
 	var $zv = undefined;
-	console.log(zv);
 	if (zv===null) {
 		var div = document.createElement('div');
 		div.id='zone-viewer';
@@ -152,22 +176,17 @@ function addEmptyZone () {
 	var zones = screenData['zones'];
 	var nz = { 'name': '', 'params': null, 'new': true };
 	zones.push(nz);
-	console.log(screenData);
 	return (zones.length-1)
 }
 
 function removeZone (zoneid) {
 	/* la zone doit etre la derniere */
 	var z = screenData['zones'];
-	console.log(z.length-1);
-	console.log(zoneid);
 	if ((z.length-1)!=zoneid) {
-		console.log(screenData);
 		console.log ('attempt to remove zone that is not last in list');
 		return;
 	}
 	screenData['zones'] = z.slice(0, zoneid-2);
-	console.log(screenData);
 }
 
 /******************************************************************************
@@ -254,190 +273,15 @@ function cancelZoneEdit (event) {
 	event.stopImmediatePropagation();
 	var $row = findRow($button)
 	var zoneid = getZoneId($row);
-	console.log(zoneid);
 	/* suppression de la zone si elle est nouvelle */
 	var z = screenData['zones'][zoneid];
 	if (z['new']===true) {
-		console.log('removing new zone '+zoneid);
 		removeZone(zoneid);
 		$row.remove();
 		$('#zv_'+zoneid).remove();
 	}
 	$("#add-zone").show();
 }
-
-
-/******************************************************************************
- * fonctions de création du formulaire d'édition de zone
- */
-
-
-function genSizeField(label, labelWidth, name, width, height, marginRight, unit, unitWidth) {
-	var span = document.createElement('span');
-	var span_label = document.createElement('span');
-	var text_label = document.createTextNode(label);
-	var input = document.createElement('input');
-	var span_unit = document.createElement('span');
-	var text_unit = document.createTextNode(unit);
-
-	span_label.appendChild(text_label);
-	
-	span.appendChild(span_label);
-
-	input.name=name;
-
-	span.appendChild(input);
-
-	span_unit.appendChild(text_unit);
-
-	span.appendChild(span_unit);
-	
-	return span;
-}
-
-function genCssRuleField(height) {
-	var div = document.createElement('div');
-	// un select avec des noms de rules css
-	var select = document.createElement('select');
-	for(var i=0;i<cssParams.length;i++) {
-		var option=document.createElement('option')
-		option.value=cssParams[i];
-		option.appendChild(document.createTextNode(cssParams[i]));
-		select.appendChild(option);
-	}
-	div.appendChild(select);
-	// un champ pour entrer les valeurs de la rule
-	var value = document.createElement('input');
-	value.type='text';
-	div.appendChild(value);
-	// un bouton pour supprimer la rule
-	var del = document.createElement('button');
-	del.appendChild(document.createTextNode('supprimer'));
-	$(del).click(function (event) {
-		$app = $(event.target);
-		event.stopImmediatePropagation();
-		$app.parent().remove();
-	});
-	div.appendChild(del);
-	var $div = $(div);
-	$div.addClass('css-rule');
-	return $div;
-}
-
-function genZoneForm($lastrow, zoneid) {
-	var newrow = document.createElement('tr');
-
-	/* cell with the input for the name */
-	var cell1 = document.createElement('td');
-	cell1.style.verticalAlign='top';
-	newrow.appendChild(cell1);
-	var input_name = document.createElement('input');
-	input_name.style.position='relative';
-	var $firstcell = $lastrow.children().first();
-	var h = ($firstcell.height()-4)+'px';
-	input_name.name='zone-name';
-	input_name.setAttribute('zoneid',zoneid);
-	$(input_name).keyup(zoneNameUpdated);
-	cell1.appendChild(input_name);
-	
-	/* cell with parameters */
-	var cell2 = document.createElement('td');
-	newrow.appendChild(cell2);
-
-	/* dimensions */
-	var tw = '75px';
-	var w = '100px';
-	var mr = '3px';
-	var uw = '49px';
-
-	/* deux lignes pour 4 dimensions */
-	var l1 = document.createElement('div'); 
-  l1.appendChild( genSizeField('pos. gauche', tw, 'left', w, h, mr, 'px', uw));
-  l1.appendChild( genSizeField('pos. haut', tw, 'top', w, h, mr, 'px', uw));
-	cell2.appendChild(l1);
-	
-	var l2 = document.createElement('div');
-  l2.appendChild( genSizeField('largeur', tw, 'width', w, h, mr, 'px', uw));
-  l2.appendChild( genSizeField('hauteur', tw, 'heigth', w, h, mr, 'px', uw));
-	cell2.appendChild(l2);
-
-	/* deux lignes de boutons */
-
-	/* ajout de regles css */
-	var l3 = document.createElement('div');
-	var appendcss = document.createElement('button');
-	appendcss.id = 'append-zone-css';
-	appendcss.appendChild(document.createTextNode('Ajouter une règle CSS'));
-	$(appendcss).click(function (event) {
-		var $app = $(event.target);
-		event.stopImmediatePropagation();
-		/* création de l'objet */
-		genCssRuleField(h).insertBefore($app.parent());
-	});
-	l3.appendChild(appendcss);
-	cell2.appendChild(l3);
-	
-	/* annuler / valider */
-	var l4 = document.createElement('div');
-	var cancel = document.createElement('button');
-	cancel.id='cancel-zone';
-	cancel.appendChild(document.createTextNode('Annuler la zone'));
-	$(cancel).click(cancelZoneEdit);
-	l4.appendChild(cancel);
-	var validate = document.createElement('button');
-	validate.id='validate-zone';
-	validate.appendChild(document.createTextNode('Créer la zone'));
-	$(validate).click(function (event) {
-		$app = $(event.target);
-		event.stopImmediatePropagation();
-		alert ('create zone');
-	});
-	l4.appendChild(validate);
-	cell2.appendChild(l4);
-	
-	return newrow;
-}
-
-function findTableLastRow ($table) {
-	var $tbody = $table.find('tbody');
-	var $lastrow = $tbody.children().last();
-	return $lastrow;
-}
-
-function appendRowToTable ($lastrow, newrow) {
-	if (!$lastrow.hasClass('odd'))
-		$(newrow).addClass('odd');
-	$lastrow.parent().append(newrow);
-}
-
-function showZoneForm ($addZoneButton, zoneid) {
-	/* hide button */
-	$addZoneButton.hide();
-	/* hide simulator */
-	$("#simulator").hide();
-	/* show zone viewer */
-	getZoneViewer().show();
-	var $table = $addZoneButton.parent().prev();
-	var $lastrow = findTableLastRow($table);
-	var newrow = genZoneForm($lastrow, zoneid);
-	appendRowToTable ($lastrow, newrow);
-	return $(newrow);
-}
-
-$("#add-zone").click(function(event) {
-  /*
-   * get the value of the screen id
-   */
-  var $addZoneButton = $(event.target)
-	event.stopImmediatePropagation();
-
-	getScreenData(function (data) {
-		var id = addEmptyZone();
-		var $zone = showZoneForm ($addZoneButton, id);
-		showZones();
-	});
-});
-
 
 /******************************************************************************
  *
@@ -470,8 +314,20 @@ function getTBody ($table) {
 	return $tb;
 }
 
-function iconButton(file, func) {
-	return $('<img/>').attr('src',file).addClass('icon-button').click(func);
+function getTFoot ($table) {
+	var $th = $table.children('thead');
+	var $tf = $table.children('tfoot');
+	if ($tf.length==0) {
+		$tf = $('<tfoot/>')
+		$th.after($tf);
+	} else 
+		$tf = $tf[0];
+	return $tf;
+}
+
+function iconButton(file, alt, func) {
+	return $('<img/>').attr('src',file).addClass('icon-button')
+		.attr('alt',alt).attr('title',alt).click(func);
 }
 
 /****
@@ -480,18 +336,18 @@ function iconButton(file, func) {
 
 function screenParamDisplay(name) {
 	return [ 
-           iconButton('images/edit.png',editScreenParam), 
-					 $('<span/>').attr('name',name).append(getScreenParamValue(name)),
-           '&nbsp;'+getScreenParamUnit(name),
+           iconButton('images/edit.png','Modifier le paramètre',editScreenParam), 
+					 $('<span/>').addClass('screen-param').attr('name',name).append(getScreenParamValue(name)),
+           $('<span/>').addClass('screen-param-unit').append(getScreenParamUnit(name)),
 				 ];
 }
 
 function screenParamForm(name) {
 	return [
-           iconButton('images/cancel.png',editScreenParamCancel),
-           iconButton('images/checkmark.png',editScreenParamValidate), 
-					 $('<input/>').attr('name', name).attr('type','text').attr('value',getScreenParamValue(name)),
-					 '&nbsp;'+getScreenParamUnit(name),
+           iconButton('images/cancel.png','Annuler la modification du paramètre',editScreenParamCancel),
+           iconButton('images/checkmark.png','Valider la modification du paramètre',editScreenParamValidate), 
+					 $('<input/>').addClass('screen-param').attr('name', name).attr('type','text').attr('value',getScreenParamValue(name)),
+					 $('<span/>').addClass('screen-param-unit').append(getScreenParamUnit(name)),
 				 ];
 }
 
@@ -523,7 +379,7 @@ function displayScreenData() {
 	var $tbody = getTBody(getTable ('screen-info', ['','valeurs']));
 	var i=0;
 	for (k in screenParams) {
-		var $tr = $('<tr/>').append($('<td/>').append(getScreenParamLabel(k)))
+		var $tr = $('<tr/>').append($('<td/>').append($('<span/>').append(getScreenParamLabel(k))))
 			.append($('<td/>').append(screenParamDisplay(k)))
 			.appendTo($tbody);
 		if ((i++)%2==0)
@@ -535,61 +391,166 @@ function displayScreenData() {
  * zone parameters
  */
 
-function editZoneParams () {
-	alert ('editing zone params');
+function editZoneParamFormCancel (event) {
+	var $button = $(event.target);
+	var $line = $($button.parents('tr')[0]);
+	var zn = parseInt($line.attr('zoneid'));
+	$line.empty().append(zoneParamDisplayRow(zn));
+
 }
 
-function zoneParamDisplayDimension (name, dimension) {
+function editZoneParamFormValidate (event) {
+	alert ('validating edited zone');
+}
+
+function zoneParamFormZoneName (zoneid) {
+	return $('<input/>').addClass('zone-param-name').val(getZoneName(zoneid));
+}
+
+function zoneParamFormDimension(zoneid, dimension) {
 	return $('<span/>').addClass('zone-param').append([
 					 $('<span/>').addClass('zone-param-label').append(getZoneParamLabel(dimension)),
-					 $('<span/>').addClass('zone-param-value').append(getZoneParam(name, dimension)),
+					 $('<input/>').addClass('zone-param-value').append(getZoneParam(zoneid, dimension)),
 					 $('<span/>').addClass('zone-param-unit').append(getZoneParamUnit(dimension)),
 				 ]);
 }
 
-function zoneParamDisplayDimensions (name, dimensions) {
+function zoneParamFormDimensions (zoneid, dimensions) {
 	var dims = [];
 	for (i in dimensions)
-		dims.push(zoneParamDisplayDimension(name, dimensions[i]));
+		dims.push(zoneParamFormDimension(name, dimensions[i]));
 	return dims;
 }
 
-function zoneParamDisplayCssRule (name, css) {
-	var p = getZoneParam(name, css);
+function evAddCssRule (event) {
+	alert('adjouter une regle css');
+}
+
+function zoneParamFormCssRules (zoneid) {
+	var rules = [];
+	function genrow (contents) {
+		return $('<div/>').addClass('zone-param-row').addClass('zone-css-row').append(contents);
+	}
+	return [
+					genrow([iconButton('images/add.png','Ajouter une règle CSS', evAddCssRule),'&nbsp;']),
+				 ];
+}
+
+function zoneParamFormParams (zoneid) {
+	return [
+           iconButton('images/cancel.png','Annuler la modification de la zone',editZoneParamFormCancel),
+           iconButton('images/checkmark.png','Valider la modification de la zone',editZoneParamFormValidate), 
+					 $('<div/>').addClass('zone-param-row').append(zoneParamFormDimensions(zoneid,['top', 'left'])),
+					 $('<div/>').addClass('zone-param-row').append(zoneParamFormDimensions(zoneid,['width', 'height'])),
+				 ].concat(zoneParamFormCssRules(zoneid));
+}
+
+function zoneParamForm (zoneid) {
+	return [
+					 $('<td/>').append(zoneParamFormZoneName(zoneid)),
+					 $('<td/>').append(zoneParamFormParams(zoneid)),
+				 ];
+}
+
+function evEditZone (event) {
+	var $button = $(event.target);
+	var $line = $button.parents('tr');
+	$line.empty().append(zoneParamForm($line.attr('zoneid')));
+}
+
+function evDeleteZone (event) {
+	alert('remove zone');
+}
+
+function zoneParamDisplayDimension (zoneid, dimension) {
+	var v = getZoneParam(zoneid, dimension);
+	if ((v===undefined)||(v===null)||(v.length==0)) v='\'&nbsp;\'';
+	return $('<span/>').addClass('zone-param').append([
+					 $('<span/>').addClass('zone-param-label').append(getZoneParamLabel(dimension)),
+					 $('<span/>').addClass('zone-param-value').append(v),
+					 $('<span/>').addClass('zone-param-unit').append(getZoneParamUnit(dimension)),
+				 ]);
+}
+
+function zoneParamDisplayDimensions (zoneid, dimensions) {
+	var dims = [];
+	for (i in dimensions)
+		dims.push(zoneParamDisplayDimension(zoneid, dimensions[i]));
+	return dims;
+}
+
+function zoneParamDisplayCssRule (zoneid, css) {
+	var p = getZoneParam(zoneid, css);
 	if (p===null) return null;
 	return $('<div/>')
 					 .append($('<span/>').append(css).addClass('css-name'))
 					 .append($('<span/>').append(p));
 }
 
-function zoneParamDisplayCssRules (name) {
+function zoneParamDisplayCssRules (zoneid) {
 	var rules = [];
 	for (i in cssParams) 
-		rules.push (zoneParamDisplayCssRule (name, cssParams[i]));
+		rules.push (zoneParamDisplayCssRule (zoneid, cssParams[i]));
 	return rules;
 }
 
-function zoneParamDisplay(name) {
+function zoneParamDisplayZoneName (zoneid) {
+	var name = getZoneName(zoneid);
+	if ((name===undefined)||(name===null)||(name.length==0)) name = '&nbsp;';
+	return $('<span/>').addClass('zone-param-name').append(name);
+}
+
+function zoneParamDisplay(zoneid) {
 	return [
-					 iconButton('images/edit.png',editZoneParams),
-					 $('<div/>').append(zoneParamDisplayDimensions(name,['top', 'left'])),
-					 $('<div/>').append(zoneParamDisplayDimensions(name,['width', 'height'])),
-				 ].concat(zoneParamDisplayCssRules(name));
+					 $('<div/>').addClass('zone-buttons').append([
+						 iconButton('images/edit.png','Modifier les paramètres de la zone',evEditZone),
+						 iconButton('images/delete.png','Supprimer la zone',evDeleteZone),
+					 ]),
+					 $('<div/>').addClass('zone-param-row').append(zoneParamDisplayDimensions(zoneid,['top', 'left'])),
+					 $('<div/>').addClass('zone-param-row').append(zoneParamDisplayDimensions(zoneid,['width', 'height'])),
+				 ].concat(zoneParamDisplayCssRules(zoneid));
+}
+
+function zoneParamDisplayRow (zoneid) {
+	return [
+					 $('<td/>').append(zoneParamDisplayZoneName(zoneid)),
+					 $('<td/>').append(zoneParamDisplay(zoneid)),
+				 ];
+}
+
+function createZone (zoneid) {
+		var $tr = $('<tr/>').attr('zoneid',zoneid);
+		if (zoneid%2==0)
+			$tr.addClass('odd');
+		return $tr;
+}
+
+function addZoneParamForm (event) {
+	var $button = $(event.target);
+	var $table = $button.parents('table');
+	var zn = getZoneCount();
+	addZone();
+	// zn is the number of the new zone
+	var $tbody = getTBody($table);
+	var $tr = createZone(zn).append(zoneParamForm(zn))
+		.appendTo($tbody);
+}
+
+function addAppendZoneButton ($tfoot) {
+	$tfoot.empty().append($('<tr/>').addClass('zone-footer').append([$('<td/>'),
+			$('<td/>').append(iconButton('images/add.png','Ajouter une zone',addZoneParamForm))
+		]));
 }
 
 function displayZonesData() {
-	var $tbody = getTBody(getTable ('zones-info', ['nom','paramètres']));
-	var i=0;
+	var $table = getTable ('zones-info', ['nom','paramètres']);
+	var $tbody = getTBody($table);
 	var zones = screenData['zones'];
-	for (k in zones) {
-		var zn = zones[k]['name'];
-		var $tr = $('<tr/>')
-			.append($('<td/>').append(zn))
-			.append($('<td/>').append(zoneParamDisplay(zn)))
+	for (zoneid in zones) {
+		createZone(zoneid).append(zoneParamDisplayRow(zoneid))
 			.appendTo($tbody);
-		if ((i++)%2==0)
-			$tr.addClass('odd');
 	}
+	addAppendZoneButton(getTFoot($table));
 }
 
 function displayData () {

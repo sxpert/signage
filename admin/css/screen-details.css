@@ -1,5 +1,6 @@
 #screen-info, #zones-info {
 	table-layout: fixed;
+	border-spacing: 0;
 }
 
 #screen-info th.col0,
@@ -12,52 +13,84 @@
 	width: 350pt;
 } 
 
-#screen-info tr td + td span,
-#screen-info tr td + td input {
-	display: inline-block;
-	width: 70pt;
-	margin: 0px;
-	padding-right: 1pt;
-	border: 1px solid rgba(0,0,0,0);
-	text-align: right;
+#screen-info tr,
+#zones-info tr {
+	line-height: 28px;
 }
-
-#screen-info tr td + td input, 
-#zones-info tr input {
-  margin-top: 1px;
-	border: 1px inset;
-	padding-top: 0px;
-	padding-bottom: 2px;
-	height: 21px;
-}
-
-#zones-info tr td {
+#screen-info td,
+#zones-info td {
+	border: 0;
 	vertical-align: top;
+}
+
+#screen-info span,
+#zones-info span {
+  margin-top: 3px;
+	margin-bottom: 3px;
+	line-height: 22px;
+	display: inline-block;
+	border: 1px solid rgba(0,0,0,0);
+}
+
+#screen-info input,
+#zones-info input{
+	margin-top: 3px;
+	margin-bottom: 3px;
+	border: 1px inset;
+	border-radius: 3px;
+	line-height: 20px;
 	padding-left: 2px;
 	padding-right: 2px;
 }
 
-#zones-info tr td input {
+#screen-info span.screen-param,
+#screen-info input.screen-param {
 	width: 70pt;
-	border: 1px inset;
+	padding-left: 2px;
+	padding-right: 2px;
+	text-align: right;
+}
+.screen-param-unit,
+.zone-param-unit {
+	width: 20pt;
+	padding-left: 4pt;
 }
 
-#zones-info td + td span {
-	display: inline-block;
+#zones-info span.zone-param {
+	margin: 0;
+	border: 0;
 }
 
+#zones-info .zone-param-row {
+	margin-bottom: 3pt;
+}
+#zones-info .zone-param-row:last-of-type {
+	margin-bottom: 0;
+}
+.zone-css-row {
+	width: calc(100% - 28px);
+	width: -webkit-calc(100% - 28px);
+	width: -moz-calc(100% - 28px);
+}
+#zones-info span.zone-param-name,
+#zones-info input.zone-param-name {
+	width: 60pt;
+	margin-top: 3px;
+	padding-left: 2px;
+	padding-right: 2px;
+}
 #zones-info span.zone-param-label {
-	width: 70pt;
-}
-#zones-info span.zone-param-value {
 	width: 60pt;
 }
-#zones-info span.zone-param-unit {
-	width: 25pt;
+#zones-info span.zone-param-value,
+#zones-info input.zone-param-value {
+	width: 60pt;
+	padding-left: 2px;
+	padding-right: 2px;
+	text-align: right;
 }
-
-#zones-info tr td + td div,
-#zones-info tr input {
+.zone-footer {
+	background-color: #ccc;
 }
 
 .icon-button {
@@ -66,8 +99,16 @@
 	height :16px;
 	border: 1px outset;
 	padding: 3px;
-	margin-left: 4px;
-	margin-top: 4px;
 	cursor: pointer;
 	border-radius: 3px;
+	margin-top: 3px;
+	margin-left: 4px;
+}
+.zone-buttons {
+	float: right;
+	line-height: normal;
+}
+.zone-buttons .icon-button {
+	display: block;
+	float: none;
 }

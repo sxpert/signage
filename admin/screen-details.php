@@ -114,9 +114,6 @@ if ($screen['adopted']=='t') {
 	if (is_null($params)) 
 		$params = array();
 	
-	echo "<pre>";
-	print_r($params);
-	echo "</pre>\n";
 	echo "<h3>Paramètres de l'écran</h3>\n";
 
 	echo "<table id=\"screen-info\"></table>\n";
@@ -124,8 +121,6 @@ if ($screen['adopted']=='t') {
 	echo "<h3>Paramètres des zônes d'affichage</h3>\n";
 
 	echo "<table id=\"zones-info\"></table>\n";
-
-	echo "<div><button id=\"add-zone\">Ajouter une zone</button></div>\n";
 
 	echo "<hr/>\n";
 
