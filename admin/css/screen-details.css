@@ -62,15 +62,28 @@
 }
 
 #zones-info .zone-param-row {
-	margin-bottom: 3pt;
+	/* margin-bottom: 3pt; */
 }
 #zones-info .zone-param-row:last-of-type {
 	margin-bottom: 0;
 }
 .zone-css-row {
+	margin-bottom: 0 !important;
 	width: calc(100% - 28px);
 	width: -webkit-calc(100% - 28px);
 	width: -moz-calc(100% - 28px);
+}
+.zone-css-row select {
+	margin: 0 !important;
+	height: 23px;
+	border-radius: 3px;
+	border: 1px inset;
+	background-color: white;
+	width: 100pt;
+	margin-right: 3px !important;
+}
+.zone-css-row .css-value {
+	width: 200pt !important;
 }
 #zones-info span.zone-param-name,
 #zones-info input.zone-param-name {

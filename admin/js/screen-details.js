@@ -391,16 +391,26 @@ function displayScreenData() {
  * zone parameters
  */
 
-function editZoneParamFormCancel (event) {
+function evCancelZoneEdit (event) {
 	var $button = $(event.target);
-	var $line = $($button.parents('tr')[0]);
+	var $line = $button.parents('tr');
 	var zn = parseInt($line.attr('zoneid'));
 	$line.empty().append(zoneParamDisplayRow(zn));
 
 }
 
-function editZoneParamFormValidate (event) {
-	alert ('validating edited zone');
+function evValidateZoneEdit (event) {
+	var $line = $(event.target).parents('tr');
+	var zoneid = parseInt($line.attr('zoneid'));
+	var zone_name=$line.find('input.zone-param-name').val();
+	var $zpv = $line.find('input.zone-param-value');
+	var zone_top=parseInt($zpv[0].value);
+	var zone_left=parseInt($zpv[1].value);
+	var zone_width=parseInt($zpv[2].value);
+	var zone_height=parseInt($zpv[3].value);
+	var $csslabels = $line.find('select.css-label');
+	var $cssvalues = $line.find('input.css-value');
+	console.log($cssvalues);
 }
 
 function zoneParamFormZoneName (zoneid) {
@@ -422,24 +432,56 @@ function zoneParamFormDimensions (zoneid, dimensions) {
 	return dims;
 }
 
+function evDelCssRule (event) {
+	var $e = $(event.target);
+	var $p = $e.parents('div :first');
+	$p.remove();
+}
+
+function zoneParamFormCssRule (zoneid, rule) {
+	var $select = $('<select/>').addClass('css-label');
+	for (var i in cssParams) {
+		var css = cssParams[i];
+		var $option = $('<option/>').val(css).append(css);
+		if (css==rule) 
+			$option.attr('selected',true);
+		$select.append($option);
+	}
+	var $input = $('<input/>').addClass('css-value');
+	return [
+					 $select,
+					 $input,
+					 iconButton('images/delete.png','Supprimer la règle CSS', evDelCssRule)
+				 ];
+}
+
+function zoneParamFormCssRow (contents) {
+		return $('<div/>').addClass('zone-param-row').addClass('zone-css-row').append(contents);
+}
+
 function evAddCssRule (event) {
-	alert('adjouter une regle css');
+	var $e = $(event.target);
+	var $p = $e.parents('div :first');
+	var $z = $e.parents('tr');
+	var zoneid = parseInt($z.attr('zoneid'));	
+	$p.before(zoneParamFormCssRow(zoneParamFormCssRule(zoneid, null)));
 }
 
 function zoneParamFormCssRules (zoneid) {
 	var rules = [];
-	function genrow (contents) {
-		return $('<div/>').addClass('zone-param-row').addClass('zone-css-row').append(contents);
+	for (var i in cssParams) {
+		var css = cssParams[i];
+		var p = getZoneParam(zoneid, css);
+		console.log(css,p);
 	}
-	return [
-					genrow([iconButton('images/add.png','Ajouter une règle CSS', evAddCssRule),'&nbsp;']),
-				 ];
+	rules.push(zoneParamFormCssRow([iconButton('images/add.png','Ajouter une règle CSS', evAddCssRule),'&nbsp;']));
+	return rules;
 }
 
 function zoneParamFormParams (zoneid) {
 	return [
-           iconButton('images/cancel.png','Annuler la modification de la zone',editZoneParamFormCancel),
-           iconButton('images/checkmark.png','Valider la modification de la zone',editZoneParamFormValidate), 
+           iconButton('images/cancel.png','Annuler la modification de la zone',evCancelZoneEdit),
+           iconButton('images/checkmark.png','Valider la modification de la zone',evValidateZoneEdit), 
 					 $('<div/>').addClass('zone-param-row').append(zoneParamFormDimensions(zoneid,['top', 'left'])),
 					 $('<div/>').addClass('zone-param-row').append(zoneParamFormDimensions(zoneid,['width', 'height'])),
 				 ].concat(zoneParamFormCssRules(zoneid));
