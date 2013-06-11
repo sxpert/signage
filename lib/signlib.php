@@ -67,7 +67,7 @@ class Session {
 		global $LDAP_SRV,$LDAP_PORT,$LDAP_BASEDN;
 		$this->initialized = False;
 	
-		error_log('session status '.session_status());
+		#error_log('session status '.session_status());
 
 		# initialisons la session...
 		if (!session_start()) {
@@ -621,5 +621,14 @@ class Feed {
 		return $c;
 	}
 }
+
+//----------------------------------------------------------------------------
+//
+// Image manager
+//
+//
+
+
+
 
 ?>

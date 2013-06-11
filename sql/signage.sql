@@ -475,6 +475,7 @@ do $$
 					t_next_index bigint;
           t_next_feed  bigint;
         begin
+				  -- current feed in the zone
           select sz.current_feed into t_curr_index from screens as s, screen_zones as sz
 						where s.id=sz.id_screen and s.id = l_screen_id and s.adopted = true and s.enabled = true 
 						and sz.zone_name = l_zone_name for update of sz;
@@ -484,11 +485,12 @@ do $$
             raise notice 'not found, returning null';
             return null;
           end if;
+					-- if we have no current index yet, select the first one that's possible
           if t_curr_index is null then
             raise notice 't_curr_index is null';
             -- find the lower number feed for this screen
             select min(feed_order) into t_next_index from screen_feeds 
-							where id_screen = l_screen_id and active = true;
+							where id_screen = l_screen_id and active = true and target = l_zone_name;
             raise notice 't_next_feed %',t_next_index;
             -- no feed for this screen, return null !
             if not found then
@@ -496,14 +498,15 @@ do $$
               return null;
             end if;
           else
+						-- else, go fetch the next one
             select feed_order into t_next_index from screen_feeds 
-							where id_screen = l_screen_id and feed_order > t_curr_index and active = true
+							where id_screen = l_screen_id and feed_order > t_curr_index and active = true and target = l_zone_name
 							order by feed_order limit 1;
             raise notice 't_next_index %',t_next_index;
             if not found then
               -- get first feed
               select min(feed_order) into t_next_index from screen_feeds 
-								where id_screen = l_screen_id and active = true;
+								where id_screen = l_screen_id and active = true and target = l_zone_name;
               raise notice 't_next_index %',t_next_index;
             end if;
           end if;

@@ -144,17 +144,18 @@ function list_all_files($fn) {
 
 function dom_get_text ($dom) {
 	$t = '';
-	#$doc = $dom->ownerDocument;
-	#echo $doc->saveXML($dom);
-	if ($dom->nodeType==XML_ELEMENT_NODE) {
-		$c = $dom->firstChild;
-		while ($c != null) {
-			$t.=dom_get_text($c);
-			$c = $c->nextSibling;
+
+	if (is_object($dom)) {
+		if ($dom->nodeType==XML_ELEMENT_NODE) {
+			$c = $dom->firstChild;
+			while ($c != null) {
+				$t.=dom_get_text($c);
+				$c = $c->nextSibling;
+			}
+		} elseif ($dom->nodeType==XML_TEXT_NODE) {
+			return $dom->wholeText;
 		}
-	} elseif ($dom->nodeType==XML_TEXT_NODE) {
-		return $dom->wholeText;
-	}
+	}	
 	return $t;
 }
 

@@ -217,24 +217,20 @@ class FeedSpip {
 			}
 			$i++;
 		}
-		error_log($h);
 		return $h;
 	}
 
 	public function update () {
     global $HTTP_OPTS;
 		if (!$this->feedid) {
-			error_log ("ERROR: unknown feed");
+			error_log ("SPIP: ERROR: unknown feed");
 			return;
 		}
 
-		# trouver l'url dans la database
-		#	pour l'instant c'est en dur
-		
 		$sql = "select url, last_update from feeds where id=$1 for update";
 		$res = db_query ($sql, array($this->feedid));
 		if (db_num_rows($res)!=1) {
-			error_log ("error locking row for feed ".$this->feedid);
+			error_log ("SPIP: error locking row for feed ".$this->feedid);
 			return;
 		}
 		$row = db_fetch_assoc($res);
@@ -246,8 +242,8 @@ class FeedSpip {
 			$lastupdate = new DateTime ($lastupdate);
 			$interval = $curdate->getTimestamp() - $lastupdate->getTimestamp();
 			# updateperiod devrait etre une valeur de config
-			$updateperiod = 86400;
-			if ($interval<86400) {
+			$updateperiod = 3600;
+			if ($interval<$updateperiod) {
 				return;
 			}
 		}
@@ -294,7 +290,11 @@ class FeedSpip {
 				error_log("title >>".print_r($title,1));
 				error_log("descriptif".print_r($desc,1));
 				*/
-				if (($title!=null)&&($date!=null)&&($desc!=null)) {
+				if (($title!=null)&&($date!=null)) {
+					if ($desc==null) {
+						error_log('SPIP: warning, desc is null for item '.$date->format('c'));
+						$desc = '';
+					}
 					# sauvegarde de l'item dans les iformations de flux.
 					# note : utilisation de la date comme clé
 
@@ -316,7 +316,7 @@ class FeedSpip {
 			db_query($sql, array($lastupdate->format('c'), $this->feedid));
 
 		} else 
-			error_log ('Unable to load XML doc from '.$url);	
+			error_log ('SPIP: Unable to load XML doc from '.$url);	
 	}
 
 	public function getItem ($feedid, $signinfo) {
@@ -351,10 +351,8 @@ class FeedSpip {
 
 if (getenv('TERM')) {
 	echo "command line\n";
-	$f = new FeedRSS();
+	$f = new FeedSpip();
  	$f->update();
-} else {
-	error_log("web call");
 }
 
 ?>
