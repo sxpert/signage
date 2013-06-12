@@ -5,9 +5,9 @@
 // handles the feed from a spip server
 //
 
-$d = dirname(__file__);
-require_once ($d.'/../signlib.php');
-require_once ($d.'/../lib.php');
+$d = dirname(dirname(__file__));
+require_once ($d.'/signlib.php');
+require_once ($d.'/lib.php');
 
 class FeedSpip {
 	private $feedid;
@@ -226,11 +226,15 @@ class FeedSpip {
 			error_log ("SPIP: ERROR: unknown feed");
 			return;
 		}
+		$this->_update($this->feedid);
+	}
 
+	private function _update ($feedid) {
+		error_log('SPIP: updating '.$feedid);
 		$sql = "select url, last_update from feeds where id=$1 for update";
-		$res = db_query ($sql, array($this->feedid));
+		$res = db_query ($sql, array($feedid));
 		if (db_num_rows($res)!=1) {
-			error_log ("SPIP: error locking row for feed ".$this->feedid);
+			error_log ("SPIP: error locking row for feed ".$feedid);
 			return;
 		}
 		$row = db_fetch_assoc($res);
@@ -244,7 +248,7 @@ class FeedSpip {
 			# updateperiod devrait etre une valeur de config
 			$updateperiod = 3600;
 			if ($interval<$updateperiod) {
-				return;
+				//return;
 			}
 		}
 		$lastupdate = $curdate;
@@ -302,12 +306,12 @@ class FeedSpip {
 
 					# cherche si on a déja une entrée
 					$sql = 'select id from feed_contents where id_feed=$1 and date=$2';
-					$res = db_query ($sql, array($this->feedid, $date->format('c')));
+					$res = db_query ($sql, array($feedid, $date->format('c')));
 					if (db_num_rows($res)!=0) {
 						# mise à jour ?
 					} else {
 						# force l'entrée comme "active" 
-						sign_add_feed_entry($this->feedid, $date->format('c'), $title, null, $desc, True);	
+						sign_add_feed_entry($feedid, $date->format('c'), $title, null, $desc, True);	
 					}
 				}
 
@@ -315,7 +319,7 @@ class FeedSpip {
 			# fin du chargement du fichier...
 			# mise a jour de l'update time
 			$sql = 'update feeds set last_update=$1 where id=$2';
-			db_query($sql, array($lastupdate->format('c'), $this->feedid));
+			db_query($sql, array($lastupdate->format('c'), $feedid));
 
 		} else 
 			error_log ('SPIP: Unable to load XML doc from '.$url);	
