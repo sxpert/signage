@@ -397,41 +397,10 @@ class FeedAPOD {
 					// handle storing the picture locally
 					error_log('caching images');
 					$mgr = new ImageManager();
-					$mgr->fetch($img,'apod', preg_replace('/-/','/',$date));
-					foreach ($img as $i) {
-	          $uimg = parse_url($i);
-  	        $pathimg = $uimg['path'];
-    	      $fileimg = basename($pathimg);
-      	    // ckeck extension
-        	  $extension = pathinfo($pathimg,PATHINFO_EXTENSION);
-          	// TODO: look for a ? in the url...
- 	 	 	    	error_log('imagefile is '.$pathimg.' file extension is '.$extension);
-          	$idx = array_search($extension,array('jpg','gif','png','tif'));
-          	error_log('idx='.print_r($idx,1));
-          	if ($idx!==false) {
-	        	  $install = get_install_path();
-							$apodcache = "/cache/images/apod/".$this->getImageDir($date).'/';
-	       		  $directory = $install.$apodcache;
-	        	  make_webserver_dir ($directory);
-
-	        	  if (($uimg['scheme']=='http')&&($uimg['host']=='apod.nasa.gov')) {
-	        	    $apodfname= $apodcache.substr($date,8,2).'-'.basename($i);
-								$fname = $install.$apodfname;
-	        	    if (cache_url_to_file ($i, $fname)) {
-	      					echo $i."\n";
-	        	      $i = $apodfname;
-	        	    } else
-	        	      $i=null;
-	        	  }
-          	} else $i=null;
-						if (!is_null($i)) {
-							$img = $i;
-							break;
-						}
-					}
+					$img = $mgr->fetch($img,'apod', preg_replace('/-/','/',$date).'-');
 	        // push this new item in the database
 					// by default, new items are active
-	        if ($img!=null)
+	        if ($img!=false)
 	          sign_add_feed_entry ($this->feedinfo['id'], $date, $caption, $img, $explanations,true);
 	        else
 	          echo "Unable to grab picture, skipping";

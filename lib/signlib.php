@@ -644,11 +644,10 @@ class ImageManager {
 		// make dirs
 		make_webserver_dir ($inst.$tmp);
 		// if last char of pfx is not '/' remove last bit
-		if (substr($path,-1)!='/')
-			$path=dirname($path);
-		make_webserver_dir ($inst.$path);
+		$npath=dirname($path);
+		make_webserver_dir ($inst.$npath);
 		error_log($tmp);
-		error_log($path);
+		error_log($npath);
 
 		// grab images
 		if (is_array($images)) {
@@ -683,6 +682,8 @@ class ImageManager {
 			}
 			$img = basename($lp);
 		} elseif (is_string($images)) {
+
+			// only one url passed
 			$u = parse_url($images);
 			$file = basename($u['path']);
 			$fn = $inst.$tmp.'/'.$file;
@@ -699,11 +700,25 @@ class ImageManager {
 		error_log('ImageManager::fetch : selected file '.$img);
 		// check $img type
 		$finfo = finfo_open(FILEINFO_MIME_TYPE);
-		$fmime = finfo_file($finfo, $inst.$tmp.'/'.$img);
+		$f = $inst.$tmp.'/'.$img;
+		$fmime = finfo_file($finfo, $f);
 		finfo_close($finfo);
 
 		error_log($fmime);
-		
+		if(substr($fmime,0,6)=='image/') {
+			// move into place
+			$nf = $path.$img;
+			if (rename($f,$inst.$nf)) {
+				// TODO: handle multiple sizes
+				// return file
+				return $nf;
+			} 
+			error_log('ImageManager::fetch : impossible to move file '.$f.' to '.$inst.$nf);
+			return false;
+		} 
+		error_log('ImageManager::fetch : file '.$f.' is not an image '.$fmime);
+		unlink($f);
+		return false;
 	}
 }
 
