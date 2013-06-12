@@ -275,6 +275,8 @@ class FeedSpip {
 
 				# récupération de la description de l'item
 				$desc = $item->getElementsByTagName('descriptif');
+				if ($desc->length==0) 
+					$desc = $item->getElementsByTagName('chapo');
 				if ($desc!=null) {
 					if (count($desc)==1) {
 						$desc = $desc->item(0);
