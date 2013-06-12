@@ -629,8 +629,81 @@ class Feed {
 //
 
 class ImageManager {
-	public function fetch ($images, $plugin) {
+	public function fetch ($images, $plugin, $pfx='', $sizes=null) {
+		if (is_array($images)) {
+			// remove duplicate images
+			$images = array_unique($images);
+			if (count($images)==1)
+				$images=$images[0];
+		}
 
+		// paths
+		$inst = get_install_path();
+		$tmp = '/cache/tmp';
+		$path = '/cache/images/'.$plugin.'/'.$pfx;
+		// make dirs
+		make_webserver_dir ($inst.$tmp);
+		// if last char of pfx is not '/' remove last bit
+		if (substr($path,-1)!='/')
+			$path=dirname($path);
+		make_webserver_dir ($inst.$path);
+		error_log($tmp);
+		error_log($path);
+
+		// grab images
+		if (is_array($images)) {
+			$w = 0;
+			$h = 0;
+			$lp = '';
+			foreach ($images as $i) {
+				// grab image
+				$u = parse_url($i);
+				$file = basename($u['path']);
+				$fn = $inst.$tmp.'/'.$file;
+
+				if (cache_url_to_file ($i, $fn)) { 
+					// check size
+					$img = new Imagick($fn);
+					$dim = $img->getImageGeometry();
+
+					// drop if smaller than previous
+					if (($dim['width']>$w)||($dim['height']>$h)) {
+						$w = $dim['width'];
+						$h = $dim['height'];
+						if (strlen($lp)>0) {
+							unlink($lp);
+						}
+						$lp = $fn;
+					} else {
+						unlink($fn);
+					}
+				} else {
+					error_log ('ImageManager::fetch : error attempting to download image '.$i);
+				}
+			}
+			$img = basename($lp);
+		} elseif (is_string($images)) {
+			$u = parse_url($images);
+			$file = basename($u['path']);
+			$fn = $inst.$tmp.'/'.$file;
+			if (cache_url_to_file ($images, $fn)) {
+				$img = basename($fn);
+			} else {
+				error_log ('ImageManager::fetch : unable to grab single file '.$images);
+			}
+		} else {
+			// fatal error
+			error_log ('ImageManager::fetch : invalid $images argument '.print_r($images,true));
+			return false;
+		}
+		error_log('ImageManager::fetch : selected file '.$img);
+		// check $img type
+		$finfo = finfo_open(FILEINFO_MIME_TYPE);
+		$fmime = finfo_file($finfo, $inst.$tmp.'/'.$img);
+		finfo_close($finfo);
+
+		error_log($fmime);
+		
 	}
 }
 
