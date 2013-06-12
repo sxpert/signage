@@ -628,7 +628,11 @@ class Feed {
 //
 //
 
+class ImageManager {
+	public function fetch ($images, $plugin) {
 
+	}
+}
 
 
 ?>

@@ -396,7 +396,8 @@ class FeedAPOD {
 
 					// handle storing the picture locally
 					error_log('caching images');
-					var_dump($img);
+					$mgr = new ImageManager();
+					$mgr->fetch($img,'apod');
 					foreach ($img as $i) {
 	          $uimg = parse_url($i);
   	        $pathimg = $uimg['path'];
