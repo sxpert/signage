@@ -108,7 +108,7 @@ if ($screen['adopted']=='t') {
 	/*
 	 * liste des zones de l'écran
 	 */
-	echo "<h2>Configuration de l'écran</h2>\n";
+	echo "<h2>Configuration de l'écran <span style=\"color:red;\">(non encore fonctionnel)</span></h2>\n";
 
 	$params = json_decode($screen['parameters'], true);
 	if (is_null($params)) 

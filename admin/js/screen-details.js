@@ -506,7 +506,7 @@ function evDeleteZone (event) {
 
 function zoneParamDisplayDimension (zoneid, dimension) {
 	var v = getZoneParam(zoneid, dimension);
-	if ((v===undefined)||(v===null)||(v.length==0)) v='\'&nbsp;\'';
+	if ((v===undefined)||(v===null)||(v.length==0)) v='';
 	return $('<span/>').addClass('zone-param').append([
 					 $('<span/>').addClass('zone-param-label').append(getZoneParamLabel(dimension)),
 					 $('<span/>').addClass('zone-param-value').append(v),

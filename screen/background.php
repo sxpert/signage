@@ -51,11 +51,11 @@ $zones = array();
 
 $z = array();
 $z['id']='image';
-$z['x']=p($w,30);
-$z['y']=p($h,30);
-$z['w']=p($w,1920-60);
-$z['h']=p($h,920);
-$Z['fontSize']='35%';
+$z['x']=p($w,0);
+$z['y']=p($h,0);
+$z['w']=p($w,1920);
+$z['h']=p($h,980);
+$z['fontSize']='100%';
 $z['color']='blue';
 //$z['backgroundColor']='white';
 array_push($zones,$z);
