@@ -1,20 +1,6 @@
-function uriParams (){
-	var s = window.location.search;
-	var a = {};
-	if ((s.length!=0)&&(s[0]=='?')) {
-		s = s.substr(1);
-		var e = s.split('&');
-		for (var i in e) {
-			var param=e[i];
-			var p = s.indexOf('=');
-			if (p>=0) {
-				var key = s.substring(0,p);
-				var value = s.substr(p+1);
-				a[key]=value;
-			}
-		}
-	}
-	return a;
+function getScreenId () {
+	var $hid=$('#screen [name="id"]');
+	return {"id": $hid.val()};
 }
 
 /******************************************************************************
@@ -42,7 +28,7 @@ var screenData = undefined;
 
 function getScreenData (callback) {
 	/* grab screen id from current url */
-	var p = uriParams();
+	var p = getScreenId();
 	$.ajax ({
 		dataType: 'json',
 		type: 'POST',
