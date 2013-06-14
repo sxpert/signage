@@ -130,6 +130,7 @@ function getZoneParam (zone, param) {
 	return null;
 }
 
+// missing "setZoneParam"
 
 /******************************************************************************
  *
@@ -394,9 +395,21 @@ function evValidateZoneEdit (event) {
 	var zone_left=parseInt($zpv[1].value);
 	var zone_width=parseInt($zpv[2].value);
 	var zone_height=parseInt($zpv[3].value);
+
+	
+	
 	var $csslabels = $line.find('select.css-label');
 	var $cssvalues = $line.find('input.css-value');
 	console.log($cssvalues);
+	$csslabels.each(function (index, elem) {
+		values[$(elem).find(':selected').val()]=$($cssvalues[index]).val();
+	});
+	console.log (values);
+	
+	console.log ('top    : '+zone_top);
+	console.log ('left   : '+zone_left);
+	console.log ('width  : '+zone_width);
+	console.log ('height : '+zone_height);
 }
 
 function zoneParamFormZoneName (zoneid) {
