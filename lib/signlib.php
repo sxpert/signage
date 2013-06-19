@@ -493,7 +493,8 @@ function sign_feed_get_next ($screenid, $feedid) {
   db_connect();
   $sql = 'select * from get_next_feed_content($1, $2) as ('.
          'id bigint, feed_id bigint, ts timestamp, caption text, '.
-         'image text, detail text, active boolean, target text);';
+         'image text, detail text, active boolean, deleted boolean, '.
+				 'target text);';
   $res = db_query($sql, array($screenid, $feedid));
   if ($res===false) return null;
   if (db_num_rows($res)!=1) return null; // can't happen
