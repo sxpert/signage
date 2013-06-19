@@ -105,17 +105,8 @@
 .zone-footer {
 	background-color: #ccc;
 }
-
 .icon-button {
-	float :right;
-	width :16px;
-	height :16px;
-	border: 1px outset;
-	padding: 3px;
-	cursor: pointer;
-	border-radius: 3px;
-	margin-top: 3px;
-	margin-left: 4px;
+		float :right;
 }
 .zone-buttons {
 	float: right;

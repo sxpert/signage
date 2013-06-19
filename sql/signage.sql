@@ -436,7 +436,13 @@ do $$
 		end if;
 	end;
 $$;
-
+do $$
+	begin
+	  if update_version(22,23) then
+			alter table feed_contents add column deleted boolean default false;
+		end if;
+	end;
+$$;
 --
 -- ces fonctions sont 'in flux'
 --
@@ -536,7 +542,7 @@ do $$
 					t_next bigint;
 				begin
           select id into t_next from feed_contents 
-						where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true) 
+						where date = (select min(date) from feed_contents where id_feed=l_feed_id and active=true and deleted=false) 
 									and id_feed = l_feed_id ;
             if not found then
               return null;
@@ -554,7 +560,7 @@ do $$
 				begin
          	select id into t_next from feed_contents 
 						where id_feed = l_feed_id and date > (select date from feed_contents where id = l_item_id)
-							    and active = true order by date limit 1;
+							    and active = true and deleted=false order by date limit 1;
          	if not found then
 						t_next := feed_get_first_item_id (l_feed_id);
          	end if;

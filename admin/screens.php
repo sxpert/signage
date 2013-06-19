@@ -61,6 +61,7 @@ $screens['header'] = $headers;
 $screens['data'] = $data;
 hlib_datatable($screens);
 
+hlib_script_add('js/confirm-dialog.js', -1);
 hlib_script_add('js/screens.js', -1);
 hlib_footer();
 ?>

@@ -243,6 +243,16 @@
 		tbody tr:nth-of-type(2n+1) {
 			background-color: #e7e7e7 !important;
 		}
+	.icon-button {
+		width :16px;
+		height :16px;
+		border: 1px outset;
+		padding: 3px;
+		cursor: pointer;
+		border-radius: 3px;
+		margin-top: 3px;
+		margin-left: 4px;
+	}
 }
 @media print {
     html {

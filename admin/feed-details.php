@@ -259,7 +259,7 @@ switch ($action) {
 		hlib_form_hidden($form,'item-list[perpage]',$perpage);
 		break;
 	default:
-		$res = db_query('select * from feed_contents where id_feed=$1 order by date desc limit $3 offset $2;',
+		$res = db_query('select * from feed_contents where id_feed=$1 and deleted=false order by date desc limit $3 offset $2;',
 										array($feed['id'],$current_pos, $perpage));
 }
 
@@ -295,8 +295,8 @@ if (db_num_rows($res)>0) {
 		$button.='/>';
 		array_push($values, $button);
 	
-		$button = '<input type="checkbox" class="feed-item-delete" ';
-		$button.= 'value="'.$row['id'].'" />';
+		$button = '<img class="icon-button feed-item-delete" ';
+		$button.= 'value="'.$row['id'].'" src="images/cancel.png" title="supprimer l\'item"/>';
 		array_push($values, $button);
 
 		$r['values'] = $values;
@@ -313,6 +313,7 @@ hlib_form_end ($form);
 /*
  * pied de page
  */
+hlib_script_add('js/confirm-dialog.js', -1);
 hlib_script_add('js/feed-details.js', -1);
 hlib_footer();
 ?>
