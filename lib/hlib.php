@@ -1107,10 +1107,12 @@ function hlib_datatable_data ($data, $cellstyle) {
   foreach ($data as $row) {
     // début de ligne et classes
     echo "<tr";
-    if ($nrow%2==1)
+/*
+		if ($nrow%2==1)
       $class = 'odd';
     else
       $class = '';
+*/
     if (array_key_exists('class', $row)) {
       if (strlen($class)>0)
         $class.=' ';

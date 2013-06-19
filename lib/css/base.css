@@ -226,9 +226,6 @@
 	line-height: 22px;
 	width: 200px;
     }
-    .odd {
-      background-color: #e7e7e7;
-    }
     table {
       border-collapse: collapse;
     }
@@ -243,6 +240,9 @@
       line-height: 18pt;
       padding-bottom: 3pt;
     }
+		tbody tr:nth-of-type(2n+1) {
+			background-color: #e7e7e7 !important;
+		}
 }
 @media print {
     html {

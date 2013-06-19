@@ -274,7 +274,8 @@ if (db_num_rows($res)>0) {
 		array('text'=>'Date', 'colstyle'=>'width:120pt;', 'cellstyle'=>'text-align:center;'),
 		array('text'=>'Titre', 'colstyle'=>'width:300pt;', 
 					'cellstyle'=>'text-align:left;text-overflow:ellipsis;'),
-		array('text'=>'Publié', 'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
+		array('text'=>'Publié', 'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;'),
+		array('text'=>'Supprimer', 'colstyle'=>'width:50pt;', 'cellstyle'=>'text-align:center;')
 	);
 	$data=array();
 	while ($row=db_fetch_assoc($res)) {
@@ -293,7 +294,11 @@ if (db_num_rows($res)>0) {
 		if ($row['active']=='t') $button.='checked';
 		$button.='/>';
 		array_push($values, $button);
-		
+	
+		$button = '<input type="checkbox" class="feed-item-delete" ';
+		$button.= 'value="'.$row['id'].'" />';
+		array_push($values, $button);
+
 		$r['values'] = $values;
 		array_push($data,$r);
 	}

@@ -369,8 +369,6 @@ function displayScreenData() {
 		var $tr = $('<tr/>').append($('<td/>').append($('<span/>').append(getScreenParamLabel(k))))
 			.append($('<td/>').append(screenParamDisplay(k)))
 			.appendTo($tbody);
-		if ((i++)%2==0)
-			$tr.addClass('odd');
 	}
 }
 
@@ -561,8 +559,6 @@ function zoneParamDisplayRow (zoneid) {
 
 function createZone (zoneid) {
 		var $tr = $('<tr/>').attr('zoneid',zoneid);
-		if (zoneid%2==0)
-			$tr.addClass('odd');
 		return $tr;
 }
 

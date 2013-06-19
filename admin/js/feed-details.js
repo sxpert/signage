@@ -1,28 +1,36 @@
 
 
-
-$(".feed-item-active").click(function(event) {
-  /*
-   * get the value of the screen id
-   */
-  $box = $(event.target)
-  /*
-   * ask if user is really sure
-   */
-	event.stopImmediatePropagation();
-	url = 'ajax/toggle-content.php';
-	userdata = { id : $box.val(), checked : ($box.attr('checked')!==undefined)};
-	successfunc = function (data) {
-	};
-	errorfunc = function () {
-		console.log ('unable to contact server');
-	};
-  $.ajax({
-    type:    'POST',
-    url:     url, 
-    data:    userdata,
-    success: successfunc,
-    error:   errorfunc,
-    datatype: 'json'  
-  });
+$(function () {
+	$(".feed-item-active").click(function(event) {
+	  /*
+	   * get the value of the screen id
+	   */
+	  $box = $(event.target);
+	  /*
+	   * ask if user is really sure
+	   */
+		event.stopImmediatePropagation();
+		url = 'ajax/toggle-content.php';
+		userdata = { id : $box.val(), checked : ($box.attr('checked')!==undefined)};
+		successfunc = function (data) {
+		};
+		errorfunc = function () {
+			console.log ('unable to contact server');
+		};
+	  $.ajax({
+	    type:    'POST',
+	    url:     url, 
+	    data:    userdata,
+	    success: successfunc,
+	    error:   errorfunc,
+	    datatype: 'json'  
+	  });
+	});
+	
+	$(".feed-item-delete").click(function (event) {
+		$box = $(event.target);
+		event.stopImmediatePropagation();
+		userdata = { id : $box.val(), checked : ($box.attr('checked')!==undefined)};
+		alert ('deleting item '+userdata.id);
+	});
 });
