@@ -27,7 +27,7 @@ echo "  <span class=\"ubuntu\"></span>\n";
 echo "  <span class=\"ubuntu-light\"></span>\n";
 echo "</span>\n";
 // should use a local copy to avoid stupid proxy issues
-echo "<script type=\"text/javascript\" src=\"js/jquery-1.8.3.js\"\></script>\n";
+echo "<script type=\"text/javascript\" src=\"js/jquery-1.8.3.js\"></script>\n";
 echo "<script type=\"text/javascript\" src=\"js/screen.js\"></script>\n";
 echo "</body>\n";
 echo "</html>";

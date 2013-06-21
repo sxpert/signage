@@ -1,0 +1,23 @@
+#spip {
+	color:black;
+	background-color:white;
+	padding: 10px;
+	min-height: -webkit-calc( 100% - 20px );
+	min-height: calc( 100% - 20px );
+}
+#spip > #date {
+	font-size:40%;
+}
+#spip > #caption {
+	font-size:70%;
+	margin-top:.5em;
+	margin-bottom:.5em
+}
+#spip > #text {
+	font-size:50%;
+}
+#spip > #text > .spip-caption {
+	font-size:100%;
+	margin-top:0.25em;
+	margin-bottom:0.25em
+}

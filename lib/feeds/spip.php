@@ -371,21 +371,28 @@ class FeedSpip {
 
 	public function getItem ($feedid, $signinfo) {
 		if ($signinfo['id']===null) return null;
-
+		
 		$html = '<div id="rss">'.
 			'<style text="text/css" scoped>'.
-			'#rss{color:black;background-color:white;padding:1%;min-height:100%;}'.
-			'#rss>#date{font-size:40%;}'.
-			'#rss>#caption{font-size:70%;margin-top:.5em;margin-bottom:.5em}'.
-			'#rss>#text{font-size:50%;}'.
-			'#rss>#text>.spip-caption{font-size:100%;margin-top:0.25em;margin-bottom:0.25em}'.
 			'</style>'.
+			'<script type="text/javascript" src="/lib/feeds/spip.js"></script>'.
 			'<div id="date">'.$signinfo['ts'].'</div>'.
 			'<div id="caption">'.$signinfo['caption'].'</div>'.
 			'<div id="text">'.$signinfo['detail'].'</div>'.
 			'</div>';
 
-	  $resp = array('html'=>$html,'delay'=>60);
+		$spip = array(
+			'style'=>'/lib/feeds/spip.css',
+			'date'=>$signinfo['ts'],
+			'caption'=>$signinfo['caption'],
+			'text'=>$signinfo['detail'],
+			);
+	  $resp = array(
+      'feedid'=>$feedid,
+		  'item'=>$signinfo['id'],
+		  'spip'=>$spip,
+			'js'=>'/lib/feeds/spip.js',
+			'delay'=>60);
 	  return $resp;
 
 	}

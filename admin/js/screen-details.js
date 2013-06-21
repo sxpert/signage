@@ -110,27 +110,48 @@ function getZoneParamUnit (param) {
 	return zoneParams[param][1];
 }
 
-function getZoneParam (zone, param) {
+function findZone (zone) {
 	var zs = screenData['zones'];
-	if (zs===null) return null;
-	// find zone
-	for (i in zs) {
-		z = zs[i];
-		if (z.hasOwnProperty('name')) {
-			if (z['name']==zone) {
-				// find parameter
-				if (!z.hasOwnProperty('params')) return null;
-				var params = z['params'];
-				if (params===null) return null;
-				if (params.hasOwnProperty(param)) return params[param];
-				return null;
+	switch (typeof zone) {
+	case 'number' :
+		return zs[zone];
+	case 'string' :
+		for (i in zs) {
+			var z = zs[i];
+			console.log(z);
+			if (z.hasOwnProperty('name')) {
+				if (z.name==zone) {
+					console.log('found zone \''+zone+'\'');
+					return z;
+				}
 			}
 		}
+		break;
+	default :
+		return null;
 	}
+}
+
+function getZoneParam (zone, param) {
+	var z = findZone (zone);
+	if (z===undefined) {
+		console.log('unable to find zone '+(typeof zone)+'\''+zone+'\'');
+		return null;
+	}
+	if (zone===null) return null;
+	if (!z.hasOwnProperty('params')) return null;
+	var params = z.params;
+	if (params===null) return null;
+	if (params.hasOwnProperty(param)) return params[param];
 	return null;
 }
 
-// missing "setZoneParam"
+function setZoneParams (zone, params) {
+	var z = findZone (zone);
+	if (z===null) return false;
+	z['params'] = params;
+	return true;
+}
 
 /******************************************************************************
  *
@@ -389,25 +410,25 @@ function evValidateZoneEdit (event) {
 	var zoneid = parseInt($line.attr('zoneid'));
 	var zone_name=$line.find('input.zone-param-name').val();
 	var $zpv = $line.find('input.zone-param-value');
-	var zone_top=parseInt($zpv[0].value);
-	var zone_left=parseInt($zpv[1].value);
-	var zone_width=parseInt($zpv[2].value);
-	var zone_height=parseInt($zpv[3].value);
-
-	
-	
+	var values = { };	
+	var v;
+	v=parseInt($zpv[0].value);
+	if (!isNaN(v)) values['top']=v;
+	v=parseInt($zpv[1].value);
+	if (!isNaN(v)) values['left']=v;
+	v=parseInt($zpv[2].value);
+	if (!isNaN(v)) values['width']=v;
+	v=parseInt($zpv[3].value);
+	if (!isNaN(v)) values['height']=v;
+	values['height']=v;
 	var $csslabels = $line.find('select.css-label');
 	var $cssvalues = $line.find('input.css-value');
-	console.log($cssvalues);
 	$csslabels.each(function (index, elem) {
 		values[$(elem).find(':selected').val()]=$($cssvalues[index]).val();
 	});
 	console.log (values);
-	
-	console.log ('top    : '+zone_top);
-	console.log ('left   : '+zone_left);
-	console.log ('width  : '+zone_width);
-	console.log ('height : '+zone_height);
+	setZoneParams(zone_name, values);
+	$line.empty().append(zoneParamDisplayRow(zoneid));
 }
 
 function zoneParamFormZoneName (zoneid) {
@@ -503,7 +524,8 @@ function evDeleteZone (event) {
 
 function zoneParamDisplayDimension (zoneid, dimension) {
 	var v = getZoneParam(zoneid, dimension);
-	if ((v===undefined)||(v===null)||(v.length==0)) v='';
+	console.log ([zoneid, v]);
+	if ((v===undefined)||(v===null)||(v.length==0)||(isNaN(v))) v='';
 	return $('<span/>').addClass('zone-param').append([
 					 $('<span/>').addClass('zone-param-label').append(getZoneParamLabel(dimension)),
 					 $('<span/>').addClass('zone-param-value').append(v),
@@ -584,6 +606,8 @@ function displayZonesData() {
 	var $tbody = getTBody($table);
 	var zones = screenData['zones'];
 	for (zoneid in zones) {
+		zoneid = parseInt(zoneid, 10);
+		console.log('displayZonesData '+(typeof zoneid));
 		createZone(zoneid).append(zoneParamDisplayRow(zoneid))
 			.appendTo($tbody);
 	}
