@@ -1,9 +1,10 @@
 #spip {
+	overflow: hidden;
 	color:black;
 	background-color:white;
 	padding: 10px;
-	min-height: -webkit-calc( 100% - 20px );
-	min-height: calc( 100% - 20px );
+	height: -webkit-calc( 100% - 20px );
+	height: calc( 100% - 20px );
 }
 #spip > #date {
 	font-size:40%;
