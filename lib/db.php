@@ -75,4 +75,8 @@ function db_update ($table, $key, $fields) {
   else return false;
 }
 
+function db_free_result($res) {
+	pg_free_result($res);
+}
+
 ?>

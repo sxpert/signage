@@ -443,6 +443,18 @@ do $$
 		end if;
 	end;
 $$;
+do $$
+	declare
+		feed_id bigint;
+	begin
+		if update_version(23,24) then
+      insert into feed_types (name, php_script, php_class, system) values 
+				('trombi',  '/lib/feeds/faces.php',  'FeedFaces', true) returning id into feed_id; 
+      insert into feeds (id_type, name, url, system) values
+      	(feed_id, 'Trombinoscope', null, true);
+		end if;
+	end;
+$$;
 --
 -- ces fonctions sont 'in flux'
 --

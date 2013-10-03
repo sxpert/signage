@@ -102,6 +102,10 @@
 	padding-right: 2px;
 	text-align: right;
 }
+.zone-param-error {
+	color: red;
+	font-style: italic;
+}
 .zone-footer {
 	background-color: #ccc;
 }

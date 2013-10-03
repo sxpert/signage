@@ -644,11 +644,14 @@ class ImageManager {
 		$path = '/cache/images/'.$plugin.'/'.$pfx;
 		// make dirs
 		make_webserver_dir ($inst.$tmp);
-		// if last char of pfx is not '/' remove last bit
-		$npath=dirname($path);
+		// if last char of path is not '/' remove last bit
+		if (substr($path, -1)!='/')
+			$npath=dirname($path);
+		else
+			$npath=$path;
 		make_webserver_dir ($inst.$npath);
-		error_log($tmp);
-		error_log($npath);
+		error_log("tmp = ".$tmp);
+		error_log("npath = ".$npath);
 
 		// grab images
 		if (is_array($images)) {

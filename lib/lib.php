@@ -68,32 +68,40 @@ function get_url_contents($url) {
 
 function cache_url_to_file ($url, $file) {
   echo "saving url ".$url." to file ".$file."\n";
-	$dest = fopen($file, 'wb');
-	if ($dest) {
-		global $HTTP_OPTS;
-		$ch = curl_init();
-		if (array_key_exists('timeout', $HTTP_OPTS))
-			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, intval($HTTP_OPTS['timeout']));
-		else
-			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-		if (array_key_exists('proxy', $HTTP_OPTS)) {
-			$u = parse_url($HTTP_OPTS['proxy']);
-			if (!is_bool($u)) {
-				if (!is_null($u['host']))
-					curl_setopt($ch, CURLOPT_PROXY, $u['host']);
-				if (!is_null($u['port']))
-					curl_setopt($ch, CURLOPT_PROXYPORT, $u['port']);
+	$u = parse_url($url);
+	if (array_key_exists('scheme',$u)) {
+		$dest = fopen($file, 'wb');
+		if ($dest) {
+			global $HTTP_OPTS;
+			$ch = curl_init();
+			if (array_key_exists('timeout', $HTTP_OPTS))
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, intval($HTTP_OPTS['timeout']));
+			else
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+			if (array_key_exists('proxy', $HTTP_OPTS)) {
+				$u = parse_url($HTTP_OPTS['proxy']);
+				if (!is_bool($u)) {
+					if (!is_null($u['host']))
+						curl_setopt($ch, CURLOPT_PROXY, $u['host']);
+					if (!is_null($u['port']))
+						curl_setopt($ch, CURLOPT_PROXYPORT, $u['port']);
+				}
 			}
+			curl_setopt($ch, CURLOPT_URL, $url);
+		  curl_setopt($ch, CURLOPT_FILE, $dest);
+			$data = curl_exec($ch);
+			fclose($dest);
+		} else {
+			error_log("Unable to open destination file '".$file."' for writing");
 		}
-		curl_setopt($ch, CURLOPT_URL, $url);
-	  curl_setopt($ch, CURLOPT_FILE, $dest);
-		$data = curl_exec($ch);
-		fclose($dest);
-		if ($data==true) {
-			chmod ($file, 0664);
- 	 		chgrp ($file, 'www-data');
-	  	return true;
-		}
+	} else {
+		copy ($u['path'], $file);
+		$data = true;
+	}
+	if ($data==true) {
+		chmod ($file, 0664);
+ 		chgrp ($file, 'www-data');
+	 	return true;
 	}
   return false;
 }

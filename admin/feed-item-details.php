@@ -93,7 +93,7 @@ hlib_form_textarea($form,'Corps du texte','detail',$item['detail']);
 hlib_form_display($form,'Image',$item['image']);
 if ($system)
 	// impossible de modifier pour un flux système
-	hlib_form_display($form, 'Élément diffusé',($item['active']?'oui':'non'));
+	hlib_form_display($form, 'Élément diffusé',(($item['active']=='t')?'oui':'non'));
 else
 	hlib_form_checkbox($form,'Élément diffusé','active',$item['active']);
 
