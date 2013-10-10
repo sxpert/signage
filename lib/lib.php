@@ -67,7 +67,7 @@ function get_url_contents($url) {
 }
 
 function cache_url_to_file ($url, $file) {
-  echo "saving url ".$url." to file ".$file."\n";
+  //echo "saving url ".$url." to file ".$file."\n";
 	$u = parse_url($url);
 	if (array_key_exists('scheme',$u)) {
 		$dest = fopen($file, 'wb');

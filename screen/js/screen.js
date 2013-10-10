@@ -187,7 +187,8 @@ function loadCss(css) {
 	l = document.createElement('link');
 	l.setAttribute('rel','stylesheet');
 	l.setAttribute('type','text/css');
-	l.setAttribute('href',css);
+	var d = new Date();
+	l.setAttribute('href',css+'?_='+d.getTime());
 	var h = document.getElementsByTagName('head');
 	if (h.length!=1) {
 		console.error('there should be only one <head> element !');

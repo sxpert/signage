@@ -61,6 +61,7 @@ if ($new) {
 } else
 	$item=sign_feed_get_item($id, true);
 
+hlib_style_add('css/feed-item-details.css');
 hlib_top();
 hlib_menu(sign_admin_menu());
 
@@ -91,6 +92,22 @@ hlib_form_text($form,'Titre','title',$item['title']);
 hlib_form_textarea($form,'Corps du texte','detail',$item['detail']);
 // image plugin...
 hlib_form_display($form,'Image',$item['image']);
+
+$imgsrc = json_decode($item['image'],true);
+if (is_null($imgsrc))
+	$imgsrc = $item['image'];
+if (!is_string($imgsrc)) {
+	if (is_array($imgsrc)) {
+		if (count($imgsrc)>0)
+			$imgsrc=$imgsrc[0];
+		else 
+			$imgsrc=null;
+	} else
+		$imgsrc=null;
+}
+if (!is_null($imgsrc))
+	echo "<div id=\"img-preview\"><img src=\"".$imgsrc."\"/></div>\n";
+
 if ($system)
 	// impossible de modifier pour un flux système
 	hlib_form_display($form, 'Élément diffusé',(($item['active']=='t')?'oui':'non'));

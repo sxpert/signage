@@ -1,0 +1,6 @@
+#img-preview {
+	padding-left: 140pt;
+}
+#img-preview > img {
+	width: 300px;
+}

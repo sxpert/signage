@@ -1,0 +1,41 @@
+#faces {
+	overflow: hidden;
+	color:black;
+	background-color:white;
+	padding: 10px;
+	height: -webkit-calc( 100% - 20px );
+	height: calc( 100% - 20px );
+}
+#faces-pic-div {
+	position: absolute;
+	top : 0.92%;
+	left: 0.52%;
+	width: 31.25%;
+}
+#faces-pic {
+	width: 100%;
+}
+#faces-data-div {
+	position: absolute;
+	top: 0.92%;
+	left: 32.29%;
+}
+#faces-function-div {
+	font-size: 70%;
+}
+#faces-equipes-div {
+	font-size: 70%;
+	vertical-align: top;
+}
+#faces-equipes-list-div {
+	display: inline-block;
+}
+#faces-logos-div {
+	position: absolute;
+	top: 80%;
+	left: 32.25%;
+}
+.faces-logo {
+	width: 100px;
+	height: 100px;
+}

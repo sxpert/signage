@@ -650,8 +650,6 @@ class ImageManager {
 		else
 			$npath=$path;
 		make_webserver_dir ($inst.$npath);
-		error_log("tmp = ".$tmp);
-		error_log("npath = ".$npath);
 
 		// grab images
 		if (is_array($images)) {
@@ -701,19 +699,55 @@ class ImageManager {
 			error_log ('ImageManager::fetch : invalid $images argument '.print_r($images,true));
 			return false;
 		}
-		error_log('ImageManager::fetch : selected file '.$img);
+		//error_log('ImageManager::fetch : selected file '.$img);
 		// check $img type
 		$finfo = finfo_open(FILEINFO_MIME_TYPE);
 		$f = $inst.$tmp.'/'.$img;
 		$fmime = finfo_file($finfo, $f);
 		finfo_close($finfo);
 
-		error_log($fmime);
 		if(substr($fmime,0,6)=='image/') {
 			// move into place
 			$nf = $path.$img;
 			if (rename($f,$inst.$nf)) {
 				// TODO: handle multiple sizes
+				if (!is_null($sizes)) {
+					$fname = $inst.$nf;
+					$finfo = pathinfo($nf);
+					$origimg = new Imagick($fname);
+					$origdim = $origimg->getImageGeometry();
+					$ow = $origdim['width'];
+					$oh = $origdim['height'];
+					$images = array();
+					foreach ($sizes as $s) {
+						if (preg_match('/(\d+|-)x(\d+|-)/',$s, $matches)) {
+							$w = $matches[1];
+							$h = $matches[2];
+							$process = false;
+							$nfname=$finfo['dirname'].'/'.$finfo['filename'].'.'.$s.'.'.$finfo['extension'];
+							$i = new Imagick($fname);
+							if (($w=='-')&&($h=='-')) {
+								// no resize...
+							} else {
+								if (($w=='-')||($h=='-')) {
+									if ($w=='-') {
+										$i->resizeImage(0,$h,imagick::FILTER_LANCZOS, 1);
+									} else {
+										// $h=='-', obviously
+										$i->resizeImage($w,0,imagick::FILTER_LANCZOS, 1);
+									}
+								} else {
+									// both are specified. make the picture fit
+									$i->resizeImage($w,$h,imagick::FILTER_LANCZOS, 1, true);
+								} 
+							}
+							error_log("Writing ".$nfname);
+							$i->writeImage($inst.$nfname);
+							array_push($images, $nfname);
+						}			
+					}
+					return $images;
+				}
 				// return file
 				return $nf;
 			} 

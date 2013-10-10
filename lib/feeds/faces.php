@@ -24,7 +24,6 @@ class FeedFaces {
 		$row = db_fetch_assoc($res);
 		db_free_result($res);
 		$feed_type=$row['id'];
-		error_log('feed_type : '.$feed_type);
 		
 		// find the feed id
 		$res = db_query("select id from feeds where id_type=$1;", array($feed_type));
@@ -35,7 +34,14 @@ class FeedFaces {
 		$row=db_fetch_assoc($res);
 		db_free_result($res);
 		$feed_id=$row['id'];
-		error_log('feed_id :   '.$feed_id);
+
+		// make all users inactive
+		$res = db_query("update feed_contents set active=false where id_feed=$1;",array($feed_id));
+		if (is_bool($res)&&($res===false)) {
+			error_log("FATAL: Unable to make all faces inactive");
+			return False;
+		}
+		db_free_result($res);
 
 		$j = file_get_contents($json);
 		$users = json_decode($j, true);
@@ -52,6 +58,24 @@ class FeedFaces {
 				if (is_file($pic)) {
 					// remove photo info
 					unset($user['photo']);
+					// manage photo
+					$i = new ImageManager();
+					$img = $i->fetch($pic, 'faces','',array("600x900"));
+					if (is_bool($img)) {
+						error_log("Problem with image file");
+						continue;
+					}
+					$img = json_encode($img);
+					$active=true;
+					if (!is_null($user['outdate'])) {
+						$today = date_create()->getTimestamp();
+						$outdate = date_create_from_format('Y-m-d',$user['outdate'])->getTimestamp();
+						if ($outdate<$today) {
+							error_log('outdate ('.$outdate.')  <  today ('.$today.')');
+							$active=false;
+						}
+					}
+					// generate the info data as a json string
 					$js_user = json_encode($user);
 					// find if we already have this user
 					$res = db_query("select * from feed_contents where id_feed=$1 and title=$2",
@@ -60,7 +84,6 @@ class FeedFaces {
 						error_log("error while looking for user '".$login."'");
 					}
 					$n = db_num_rows($res);
-					error_log("found ".$n." rows for user '".$login."'");
 					if ($n==0) {
 						db_free_result($res);
 						// add user
@@ -85,19 +108,22 @@ class FeedFaces {
 							$d = date_add($d, new DateInterval('PT1S'));
 							$d = $d->format($format);
 						}
-						// handle picture storage
-						$i = new ImageManager();
-						$img = $i->fetch($pic, 'faces');
 						// add user to db
-						sign_add_feed_entry ($feed_id, $d, $login, $img, $js_user, $active=false);
+						sign_add_feed_entry ($feed_id, $d, $login, $img, $js_user, $active);
 					} else {
-						// modify user
-						// remove 'photo' value
+						// modify user (and set user active)
+						error_log("Updating user '".$login."'");
+						$res = db_query("update feed_contents set image=$1, detail=$2, active=$3 where id_feed=$4 and title=$5;",
+							array($img, $js_user, ($active?'true':'false'), $feed_id, $login));
+						if (is_bool($res)&&($res===false)) {
+							error_log("Problem updating user '".$login."'");
+						}
+						db_free_result($res);
 					}
 					// contents of the data
 					// id      auto
 					// id_feed $feed_id
-					// date    ?
+					// date    indate+(secondes pour numero d'ordre)
 					// title   $login
 					// image   url picture
 					// detail  json_encode($user)
@@ -109,18 +135,18 @@ class FeedFaces {
   public function getItem($feedid, $signinfo) {
     if ($signinfo['id']===null) return null;
 
-    $html = '<div id="manuel">'.
-      '<style text="text/css" scoped>'.
-			'#manuel{color:white;}'.
-			'#manuel>#date{font-size:30%;}'.
-			'#manuel>#caption{font-size:70%;}'.
-			'#manuel>#text{font-size:40%;}'.
-      '</style>'.
-      '<div id="date">'.$signinfo['ts'].'</div>'.
-			'<div id="caption">'.$signinfo['caption'].'</div>'.
-			'<div id="text">'.$signinfo['detail'].'</div>'.
-      '</div>';
-    $resp = array('html'=>$html,'delay'=>60);
+		$faces = array(
+			'date'=>$date,
+			'style'=>'/lib/feeds/faces.css',
+			'login'=>$signinfo['caption'],
+			'picture'=>json_decode($signinfo['image'],true),
+			'text'=>json_decode($signinfo['detail'],true));
+    $resp = array(
+			'feedid'=>$feedid,
+			'item'=>$signinfo['id'],
+			'faces'=>$faces,
+			'js'=>'/lib/feeds/faces.js',
+			'delay'=>60);
     return $resp;
   }
 
