@@ -1113,6 +1113,7 @@ function hlib_datatable_data ($data, $cellstyle) {
     else
       $class = '';
 */
+		$class='';
     if (array_key_exists('class', $row)) {
       if (strlen($class)>0)
         $class.=' ';
