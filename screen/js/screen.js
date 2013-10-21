@@ -264,7 +264,6 @@ function refreshZone(zone) {
 	    success: function(data, textstatus, jqXHR) {
 	
 	      var updated = updateZone (data);
-	      textstatus = null;
 	      jqXHR = null;
 	      if (updated) {
 	        // sets up the timer
@@ -275,7 +274,14 @@ function refreshZone(zone) {
 	          refreshZone(zone);
 	        }, delay);
 	        delay = null;
-	      }
+	      } else {
+					// if something wrong happened, try again
+					console.log (textstatus);
+					window.setTimeout(function () {
+						refreshZone(zone);
+					}, 10000);
+				}
+	      textstatus = null;
 	      updated = null;
 	      data = null;
 	    },

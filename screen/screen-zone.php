@@ -43,12 +43,15 @@ switch ($zone) {
 	      $c = $feed->getNext($screen_id, $feed_id, $zone);
 				if (!is_array($c)) {
 					error_log('SCREEN: error while getNext('.$screen_id.','.$feed_id.',\''.$zone.'\')'); 
+					$s['delay'] = 10;
+					$s['html'] = 'erreur à la création du flux';
 				} else {
 					$s = array_merge($s,$c);
 				}
 			} else {
+				error_log ('SCREEN: error while creating feed for ('.$screen_id.','.$zone.')');
 				$s['delay'] = 10;
-				$s['html'] = 'erreur a la création du flux';
+				$s['html'] = 'erreur à la création du flux';
 			}
     }
 }
