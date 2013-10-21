@@ -519,6 +519,7 @@ do $$
 						-- else, go fetch the next one
             select feed_order into t_next_index from screen_feeds 
 							where id_screen = l_screen_id and feed_order > t_curr_index and active = true and target = l_zone_name
+							and id_feed in (select id_feed from feed_contents where active=true and deleted=false group by id_feed )
 							order by feed_order limit 1;
             raise notice 't_next_index %',t_next_index;
             if not found then
