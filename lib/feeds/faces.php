@@ -136,7 +136,7 @@ class FeedFaces {
     if ($signinfo['id']===null) return null;
 
 		$faces = array(
-			'date'=>$date,
+			'date'=>$signinfo['ts'],
 			'style'=>'/lib/feeds/faces.css',
 			'login'=>$signinfo['caption'],
 			'picture'=>json_decode($signinfo['image'],true),
