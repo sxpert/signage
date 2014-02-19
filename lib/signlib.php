@@ -611,9 +611,14 @@ class Feed {
 		
   	$sql = 'select * from feed_get_item($1, $2, $3) as ('.
    		     'id bigint, feed_id bigint, ts timestamp, caption text, '.
-      	   'image text, detail text, active boolean, target text);';
+      	   'image text, detail text, active boolean, deleted boolean, '.
+					 'target text);';
 	  $res = db_query($sql, array($this->screenid, $this->feed, $itemid));
-  	if ($res===false) return null;
+  	if ($res===false) {
+			error_log ("error while trying to obtain feed item ".$this->screen.", ".
+				$this->feed.", ".$itemid);
+			return null;
+		}
   	if (db_num_rows($res)!=1) return null; // can't happen
   	$feedinfo = db_fetch_assoc($res);
   	if ($feedinfo['id']===null) $feedinfo=null;

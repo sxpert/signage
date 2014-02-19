@@ -32,6 +32,8 @@ function db_query ($s, $p=null) {
 	try {
 		$r = pg_query_params ($db, $s, $p);
 	} catch (Exception $e) {
+		error_log($s);
+		error_log($p);
 		error_log($e->getMessage());
 		error_log(print_r(debug_backtrace(),1));
 	}
