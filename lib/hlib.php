@@ -508,6 +508,7 @@ function hlib_form_check_url($url,&$e) {
     return false; /* force http ?? better not */
   }
   error_log('scheme ok');
+	$proxy = null;
   if (array_key_exists('host',$u)) {
     $ipv4 = dns_get_record($u['host'],DNS_A);
 		$ipv6 = dns_get_record($u['host'],DNS_AAAA);
@@ -518,7 +519,7 @@ function hlib_form_check_url($url,&$e) {
     }
     error_log('dns ok');
     //error_log(print_r($ips,1));
-    if (!array_key_exists('proxyhost',$HTTP_OPTS)) {
+    if (!array_key_exists('proxy',$HTTP_OPTS)) {
       /* trouve si une des adresses réponds */
       $ok = false;
       foreach ($ips as $ip) {
@@ -541,6 +542,7 @@ function hlib_form_check_url($url,&$e) {
       }
     } else {
       error_log('we have a proxy, can\'t check direct connexion');
+			$proxy = $HTTP_OPTS['proxy'];
       $ok = true;
     }
     if (!$ok) {
@@ -560,6 +562,8 @@ function hlib_form_check_url($url,&$e) {
 	curl_setopt($ch, CURLOPT_HEADER, true);
 	curl_setopt($ch, CURLOPT_NOBODY, true);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+	if (!is_null($proxy))
+		curl_setopt($ch, CURLOPT_PROXY, $proxy);
 	$head = curl_exec($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	

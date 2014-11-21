@@ -44,7 +44,7 @@ $res = array();
 $res['w'] = 1920;
 $res['h'] = 1080; 
 $s['resolution'] = $res;
-$s['backgroundColor'] = '#166CBA';
+$s['backgroundColor'] = '#303c47';
 // value of fontsize
 $s['fontsize'] = $ts/$h;
 $zones = array();

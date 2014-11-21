@@ -19,6 +19,16 @@ function db_connect () {
 	return _db_connect($DBUSER,$DBPASS);
 }
 
+function db_begin () {
+	GLOBAL $db;
+	db_query ("begin;");
+}
+
+function db_commit () {
+	GLOBAL $db;
+	db_query ("commit;");
+}
+
 function db_last_error () {
 	global $db;
 	return pg_last_error($db);
@@ -50,6 +60,10 @@ function db_affected_rows ($r) {
   
 function db_fetch_assoc ($r) {
 	return pg_fetch_assoc($r);
+}
+
+function db_fetch_object ($r) {
+	return pg_fetch_object($r);
 }
 
 function db_update ($table, $key, $fields) {

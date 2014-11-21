@@ -333,6 +333,37 @@ function get_next_feed_id ($screen_id, $zone, $simul) {
  * 
  */
 
+function sign_feed_type_register ($type, $php, $class) {
+	db_connect();
+	db_begin ();
+	$res = db_query ('select id from feed_types where name = $1;', array($type));
+	if ($res===False) {
+		error_log ("unable to request if type ".$type." exists");
+		return null;
+	}
+	$nb = db_num_rows($res);
+	if ($nb>1) {
+		error_log ("problem with type ".$type." : more than one found (".$nb.")");
+		return null;
+	}
+	if ($nb==0) {
+		$res = db_query ('insert into feed_types (name, php_script, php_class) values ($1, $2, $3) returning id;',
+			array($type, $php, $class));
+		if ($res===False) {
+			error_log ("unable to add feed type [".$type.", ".$php.", ".$class."]");
+			return null;
+		}
+		$nb = db_affected_rows ($res);
+		if ($nb!=1) {
+			error_log ("error adding feed type : ".$nb);
+			return null;
+		}
+	}
+	$o = db_fetch_assoc ($res);
+	db_commit ();
+	return 0+$o['id'];
+}
+
 /****
  *
  * Le flux existe t'il ?
@@ -352,6 +383,31 @@ function sign_feed_get($feed_id, $bomb=false) {
 	$r = db_fetch_assoc($res);
 	return $r;
 }
+
+/****
+ *
+ * liste des id des flux pour un type particulier
+ *
+ */
+function sign_feeds_list_from_type ($type) {
+	db_connect ();
+	$res = db_query('select f.id from feeds as f, feed_types as ft where f.id_type=ft.id and ft.name=$1',array($type));
+	if ($res===False) {
+		error_log ('error getting list of feeds of type '.$type);
+		return null;
+	}
+	$nb = db_num_rows($res);
+	if ($nb==0) {
+		error_log ('no feeds of type '.$type.' found');
+		return null;
+	}
+	$l = array();
+	while ($o = db_fetch_assoc($res)) {
+		array_push ($l, 0+$o['id']);
+	}
+	return $l;
+}
+
 
 /****
  *
@@ -534,11 +590,24 @@ class Feed {
 		return null;
 	}
 
+	public function _getUrl () {
+		error_log ("getting url");
+		if ($this->feed!==null) {
+			$sql = 'select url from feeds where id=$1;';
+			$res = db_query ($sql, array($this->feed));
+			if ((is_bool($res)&&($res===false))||(db_num_rows($res)!=1)) return null;
+			$o = db_fetch_object($res);
+			return $o->url;
+		}
+		return null;
+	}
+
 	public function __get ($name) {
 		switch ($name) {
 			case 'id':
-			case 'feed': return $this->feed;
+			case 'feed': return $this->feed; 
 			case 'target': return $this->_getTarget();
+			case 'url': return self::_getUrl();
 			default: return;
 		}
 	}
@@ -625,6 +694,9 @@ class Feed {
 	
 		$c = $f->getItem($this->feed, $feedinfo);
 		return $c;
+	}
+
+	public function find_item_by_title ($title) {
 	}
 }
 

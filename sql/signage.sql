@@ -455,6 +455,20 @@ do $$
 		end if;
 	end;
 $$;
+do $$
+	begin
+		if update_version(24,25) then
+			grant insert on feed_types to signage;
+		end if;
+	end;
+$$;
+do $$
+	begin
+		if update_version(25,26) then
+			grant update on seq_feed_types to signage;
+		end if;
+	end;
+$$;
 --
 -- ces fonctions sont 'in flux'
 --
